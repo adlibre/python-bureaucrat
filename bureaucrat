@@ -3,11 +3,6 @@
 Bureaucrat - the Procfile manager for Python Virtual Environments
 """
 
-# TODO: Status method
-# TODO: Support logging
-# TODO: Support specifying pidfile path
-# TODO: Support spawning a specific process
-
 import argparse
 import os
 import re
@@ -22,6 +17,7 @@ class Process(object):
         self.name = name
         self.cmd = cmd
         self.pid_file = None
+        #self.stdout_file = None
 
     def pid(self):
         """
@@ -54,9 +50,9 @@ class Process(object):
             print "Couldn't remove %s" % self.pid_file
             exit(128)
 
-    def execute(self):
+    def execute(self, cwd):
         cmd = self.cmd.split()
-        s = subprocess.Popen(cmd)
+        s = subprocess.Popen(cmd, cwd=cwd, stdout=subprocess.PIPE, bufsize=1)
         # write out pid
         with open(self.pid_file, 'w') as f:
             f.write(str(s.pid))
@@ -83,9 +79,9 @@ class Bureaucrat(object):
                 print "Error Launching %s: %s exists" % (p.name, p.pid_file)
             else:
                 print "Launching %s: %s" % (p.name, p.cmd)
-                # Add virtualenv bin to path
+                # Add virtualenv bin to path (alternatively we source bin/activate)
                 os.environ['PATH'] = '%s/bin' % self.virtual_env + os.pathsep + os.environ['PATH']
-                p.execute()
+                p.execute(cwd=self.virtual_env)
 
     def stop(self):
         """  Terminate all processes in Procfile """
@@ -120,7 +116,7 @@ class Bureaucrat(object):
                 cmd = match.group(2).strip()
                 p = Process(name, cmd)
                 # Assign pid file
-                p.pid_file = os.path.join(self.virtual_env, '%s.pid' % name)  # FIXME: We might want to put these somewhere elses
+                p.pid_file = os.path.join(self.virtual_env, '%s.pid' % name)  # FIXME: We might want to put these somewhere else
                 procs.append(p)
         self.procs = procs
 
@@ -132,7 +128,7 @@ class Bureaucrat(object):
 
 
 def init_bureaucrat(args):
-    """  Initialise Bureaucrat with some sane defaults """
+    """  Initialise Bureaucrat with sane defaults """
     virtual_env = args.venv or os.environ.get('VIRTUAL_ENV', '')  # read env variable from venv, or param, or cwd
     proc_file = args.procfile or os.path.join(virtual_env, 'Procfile')
     env_file = args.envfile or os.path.join(virtual_env, '.env')
