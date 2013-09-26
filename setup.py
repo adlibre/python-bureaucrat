@@ -4,8 +4,17 @@ from setuptools import setup
 
 setup(name='bureaucrat',
     version='0.0.1',
+    author="Andrew Cutler",
+    author_email="andrew@adlibre.com.au",
+    description=("Procfile process manager for virtual environments"),
+    license="BSD",
     long_description=open('README.md').read(),
-    url='https://bitbucket.org/macropin/python-bureaucrat',
+    url='https://github.com/adlibre/python-bureaucrat',
+    classifiers=[
+        "Development Status :: 3 - Alpha",
+        "Topic :: Utilities",
+        "License :: OSI Approved :: BSD License",
+    ],
     scripts=['bureaucrat'],
 )
 
