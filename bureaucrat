@@ -17,7 +17,7 @@ class Process(object):
         self.name = name
         self.cmd = cmd
         self.pid_file = None
-        #self.stdout_file = None
+        self.log_file = None
 
     def pid(self):
         """
@@ -39,8 +39,9 @@ class Process(object):
             os.kill(self.pid(), signal.SIGTERM)
         except OSError:
             print "Process %s not found." % self.pid()
-            self.rm_pid()
             exit(128)
+        else:
+            self.rm_pid()
 
     def rm_pid(self):
         # remove pid
@@ -52,7 +53,7 @@ class Process(object):
 
     def execute(self, cwd):
         cmd = self.cmd.split()
-        s = subprocess.Popen(cmd, cwd=cwd, stdout=subprocess.PIPE, bufsize=1)
+        s = subprocess.Popen(cmd, stdout=open(self.log_file, 'w'), cwd=cwd)  #, bufsize=1
         # write out pid
         with open(self.pid_file, 'w') as f:
             f.write(str(s.pid))
@@ -61,11 +62,12 @@ class Process(object):
 class Bureaucrat(object):
     """ Main Class """
 
-    def __init__(self, proc_file, env_file, virtual_env, debug=False):
+    def __init__(self, proc_file, env_file, virtual_env, log_path, debug=False):
         self.debug = debug
         self.proc_file = proc_file
         self.env_file = env_file
         self.virtual_env = virtual_env
+        self.log_path = log_path
         self.procs = None
         self.proc_file_owner_id = self._get_proc_file_owner_id()
         # Init
@@ -117,6 +119,8 @@ class Bureaucrat(object):
                 p = Process(name, cmd)
                 # Assign pid file
                 p.pid_file = os.path.join(self.virtual_env, '%s.pid' % name)  # FIXME: We might want to put these somewhere else
+                # assign log file
+                p.log_file = os.path.join(self.log_path, '%s.log' % name)
                 procs.append(p)
         self.procs = procs
 
@@ -132,7 +136,8 @@ def init_bureaucrat(args):
     virtual_env = args.venv or os.environ.get('VIRTUAL_ENV', '')  # read env variable from venv, or param, or cwd
     proc_file = args.procfile or os.path.join(virtual_env, 'Procfile')
     env_file = args.envfile or os.path.join(virtual_env, '.env')
-    return Bureaucrat(proc_file, env_file, virtual_env, debug=False)
+    log_path = args.logpath or ''
+    return Bureaucrat(proc_file, env_file, virtual_env, log_path=log_path, debug=False)
 
 
 def stop(args):
@@ -155,18 +160,25 @@ if __name__ == "__main__":
     # Parse command line arguments
     parser = argparse.ArgumentParser(prog='Bureaucrat',
                                      description='Bureaucrat - the Procfile manager for Python Virtual Environments')
+    # Venv root
     venv = argparse.ArgumentParser(add_help=False)
     venv.add_argument('--venv', type=str, help='Virtual Env Root')
+    # Procfile
     procfile = argparse.ArgumentParser(add_help=False)
     procfile.add_argument('--procfile', type=str, help='Procfile path')
+    # .env
     envfile = argparse.ArgumentParser(add_help=False)
     envfile.add_argument('--envfile', type=str, help='.env file path')
+    # logpath
+    logpath = argparse.ArgumentParser(add_help=False)
+    logpath.add_argument('--logpath', type=str, help='log file path')
+    #
     sp = parser.add_subparsers()
-    sp_start = sp.add_parser('start', parents=[venv, procfile, envfile], help='Starts daemons')
+    sp_start = sp.add_parser('start', parents=[venv, procfile, envfile, logpath], help='Starts daemons')
     sp_start.set_defaults(func=start)
-    sp_stop = sp.add_parser('stop', parents=[venv, procfile, envfile], help='Stops daemons')
+    sp_stop = sp.add_parser('stop', parents=[venv, procfile, envfile, logpath], help='Stops daemons')
     sp_stop.set_defaults(func=stop)
-    sp_restart = sp.add_parser('restart', parents=[venv, procfile, envfile], help='Restarts daemons')
+    sp_restart = sp.add_parser('restart', parents=[venv, procfile, envfile, logpath], help='Restarts daemons')
     sp_restart.set_defaults(func=restart)
     args = parser.parse_args()
     args.func(args)
