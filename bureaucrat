@@ -52,8 +52,10 @@ class Process(object):
             exit(128)
 
     def execute(self, cwd):
-        cmd = self.cmd.split()
-        s = subprocess.Popen(cmd, stdout=open(self.log_file, 'w'), cwd=cwd)  #, bufsize=1
+        # Pass logfile to process (might be handy in the future)
+        os.environ['LOGFILE'] = self.log_file
+        cmd = str(self.cmd).replace('$LOGFILE', self.log_file)  # replace here, because we're not using a shell it will be executed as literal
+        s = subprocess.Popen(cmd.split(), stdout=open(self.log_file, 'w'), cwd=cwd)  #, bufsize=1
         # write out pid
         with open(self.pid_file, 'w') as f:
             f.write(str(s.pid))
@@ -88,6 +90,7 @@ class Bureaucrat(object):
     def stop(self):
         """  Terminate all processes in Procfile """
         for p in self.procs:
+            print "Stopping %s: %s" % (p.name, p.cmd)
             p.kill()
 
     def _set_environment(self):
