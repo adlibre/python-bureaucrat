@@ -28,20 +28,20 @@ class Process(object):
             with open(self.pid_file, 'r') as f:
                 pid = f.read()
         except IOError:
-            print "%s not found." % self.pid_file
-            exit(128)
+            return None
         else:
             return int(pid)
 
     def kill(self):
         # kill process
         try:
-            os.kill(self.pid(), signal.SIGTERM)
+            if self.pid():
+                os.kill(self.pid(), signal.SIGTERM)
         except OSError:
-            print "Process %s not found." % self.pid()
-            exit(128)
-        else:
-            self.rm_pid()
+            print "Proc %s (pid: %s) not found." % (self.name, self.pid())
+        finally:
+            if self.pid():
+                self.rm_pid()
 
     def rm_pid(self):
         # remove pid
