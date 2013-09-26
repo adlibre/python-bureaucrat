@@ -1,0 +1,4 @@
+*.pyc
+build/
+bureaucrat.egg-info/
+dist/

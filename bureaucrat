@@ -1,0 +1,178 @@
+#!/usr/bin/env python
+"""
+Bureaucrat - the Procfile manager for Python Virtual Environments
+"""
+
+# TODO: Status method
+# TODO: Support logging
+# TODO: Support specifying pidfile path
+# TODO: Support spawning a specific process
+
+import argparse
+import os
+import re
+import subprocess
+import signal
+
+
+class Process(object):
+    """ Represents a single process instance, eg a line of a Procfile """
+
+    def __init__(self, name, cmd):
+        self.name = name
+        self.cmd = cmd
+        self.pid_file = None
+
+    def pid(self):
+        """
+        :return: pid of associated process
+        """
+        try:
+            # open pid file
+            with open(self.pid_file, 'r') as f:
+                pid = f.read()
+        except IOError:
+            print "%s not found." % self.pid_file
+            exit(128)
+        else:
+            return int(pid)
+
+    def kill(self):
+        # kill process
+        try:
+            os.kill(self.pid(), signal.SIGTERM)
+        except OSError:
+            print "Process %s not found." % self.pid()
+            self.rm_pid()
+            exit(128)
+
+    def rm_pid(self):
+        # remove pid
+        try:
+            os.remove(self.pid_file)
+        except OSError:
+            print "Couldn't remove %s" % self.pid_file
+            exit(128)
+
+    def execute(self):
+        cmd = self.cmd.split()
+        s = subprocess.Popen(cmd)
+        # write out pid
+        with open(self.pid_file, 'w') as f:
+            f.write(str(s.pid))
+
+
+class Bureaucrat(object):
+    """ Main Class """
+
+    def __init__(self, proc_file, env_file, virtual_env, debug=False):
+        self.debug = debug
+        self.proc_file = proc_file
+        self.env_file = env_file
+        self.virtual_env = virtual_env
+        self.procs = None
+        self.proc_file_owner_id = self._get_proc_file_owner_id()
+        # Init
+        self._set_environment()
+        self._parse_proc_file()
+
+    def start(self):
+        """  Start all processes in Procfile """
+        for p in self.procs:
+            if os.path.exists(p.pid_file):
+                print "Error Launching %s: %s exists" % (p.name, p.pid_file)
+            else:
+                print "Launching %s: %s" % (p.name, p.cmd)
+                # Add virtualenv bin to path
+                os.environ['PATH'] = '%s/bin' % self.virtual_env + os.pathsep + os.environ['PATH']
+                p.execute()
+
+    def stop(self):
+        """  Terminate all processes in Procfile """
+        for p in self.procs:
+            p.kill()
+
+    def _set_environment(self):
+        """ Set environment variables from .env file """
+        reg = re.compile('(?P<name>\w+)(\=(?P<value>.+))')
+        for line in open(self.env_file):
+            m = reg.match(line)
+            if m:
+                name = m.group('name')
+                value = ''
+                if m.group('value'):
+                    value = m.group('value')
+                os.environ[name] = value
+                if self.debug:
+                    print "set %s %s" % (name, value)
+
+    def _parse_proc_file(self):
+        """ Parse Procfile
+        :return: list of process objects
+        """
+        procs = []
+        with open(self.proc_file) as f:
+            for line in f.readlines():
+                match = re.search(r'([a-zA-Z0-9_-]+):(.*)', line)
+                if not match:
+                    raise Exception('Bad Procfile line')
+                name = match.group(1).strip()
+                cmd = match.group(2).strip()
+                p = Process(name, cmd)
+                # Assign pid file
+                p.pid_file = os.path.join(self.virtual_env, '%s.pid' % name)  # FIXME: We might want to put these somewhere elses
+                procs.append(p)
+        self.procs = procs
+
+    def _get_proc_file_owner_id(self):
+        try:
+            return os.stat(self.proc_file).st_uid
+        except OSError:
+            raise
+
+
+def init_bureaucrat(args):
+    """  Initialise Bureaucrat with some sane defaults """
+    virtual_env = args.venv or os.environ.get('VIRTUAL_ENV', '')  # read env variable from venv, or param, or cwd
+    proc_file = args.procfile or os.path.join(virtual_env, 'Procfile')
+    env_file = args.envfile or os.path.join(virtual_env, '.env')
+    return Bureaucrat(proc_file, env_file, virtual_env, debug=False)
+
+
+def stop(args):
+    b = init_bureaucrat(args)
+    b.stop()
+
+
+def start(args):
+    b = init_bureaucrat(args)
+    b.start()
+
+
+def restart(args):
+    b = init_bureaucrat(args)
+    b.stop()
+    b.start()
+
+if __name__ == "__main__":
+
+    # Parse command line arguments
+    parser = argparse.ArgumentParser(prog='Bureaucrat',
+                                     description='Bureaucrat - the Procfile manager for Python Virtual Environments')
+    venv = argparse.ArgumentParser(add_help=False)
+    venv.add_argument('--venv', type=str, help='Virtual Env Root')
+    procfile = argparse.ArgumentParser(add_help=False)
+    procfile.add_argument('--procfile', type=str, help='Procfile path')
+    envfile = argparse.ArgumentParser(add_help=False)
+    envfile.add_argument('--envfile', type=str, help='.env file path')
+    sp = parser.add_subparsers()
+    sp_start = sp.add_parser('start', parents=[venv, procfile, envfile], help='Starts daemons')
+    sp_start.set_defaults(func=start)
+    sp_stop = sp.add_parser('stop', parents=[venv, procfile, envfile], help='Stops daemons')
+    sp_stop.set_defaults(func=stop)
+    sp_restart = sp.add_parser('restart', parents=[venv, procfile, envfile], help='Restarts daemons')
+    sp_restart.set_defaults(func=restart)
+    args = parser.parse_args()
+    args.func(args)
+
+
