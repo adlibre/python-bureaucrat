@@ -30,16 +30,17 @@ Basic options are _start_, _stop_ and _start_.
       -h, --help            show this help message and exit
 
 
-Additional arguments for specifying a custom location for `Procfile` and `.env`
+Additional arguments for specifying a custom location for `Procfile`, `.env` and log files.
 
     usage: Bureaucrat start [-h] [--venv VENV] [--procfile PROCFILE]
-                            [--envfile ENVFILE]
+                            [--envfile ENVFILE] [--logpath LOGPATH]
 
     optional arguments:
       -h, --help           show this help message and exit
       --venv VENV          Virtual Env Root
       --procfile PROCFILE  Procfile path
       --envfile ENVFILE    .env file path
+      --logpath LOGPATH    log file path
 
 
 ## Status
