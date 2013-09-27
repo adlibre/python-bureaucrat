@@ -3,7 +3,7 @@
 from setuptools import setup
 
 setup(name='bureaucrat',
-    version='0.0.1',
+    version='0.0.2',
     author="Andrew Cutler",
     author_email="andrew@adlibre.com.au",
     description=("Procfile process manager for virtual environments"),
