@@ -4,7 +4,7 @@ The Procfile process manager for Python Virtual Environments.
 
 ## Installation
 
-Install with `pip install -e git+git@github.com:adlibre/python-bureaucrat.git` or 
+Install with `pip install -e git+git@github.com:adlibre/python-bureaucrat.git#egg=bureaucrat` or 
 `pip install git+https://github.com/adlibre/python-bureaucrat.git#egg=bureaucrat`.
 
 ## Config
