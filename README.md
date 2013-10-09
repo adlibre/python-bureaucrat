@@ -2,6 +2,8 @@
 
 The Procfile process manager for Python Virtual Environments.
 
+Bureaucrat provides additional support for _Deployfile_ based deployment task management.
+
 ## Installation
 
 Install with `pip install -e git+git@github.com:adlibre/python-bureaucrat.git#egg=bureaucrat` or 
@@ -9,23 +11,24 @@ Install with `pip install -e git+git@github.com:adlibre/python-bureaucrat.git#eg
 
 ## Config
 
-To use Bureaucrat you will need to have created a [Procfile](https://devcenter.heroku.com/articles/procfile) and
-[.env](https://devcenter.heroku.com/articles/procfile#setting-local-environment-variables) file in your virtual env
+To use Bureaucrat you will need to have created a [Procfile](https://devcenter.heroku.com/articles/procfile), Deployfile
+and [.env](https://devcenter.heroku.com/articles/procfile#setting-local-environment-variables) file in your virtual env
 root.
 
 ## Usage
 
-Basic options are _start_, _stop_ and _start_.
+Basic options are _start_, _stop_, _restart_ and _deploy_.
 
-    usage: Bureaucrat [-h] {start,stop,restart} ...
+    usage: Bureaucrat [-h] {start,stop,restart,deploy} ...
 
     Bureaucrat - the Procfile manager for Python Virtual Environments
 
     positional arguments:
-      {start,stop,restart}
+      {start,stop,restart,deploy}
         start               Starts daemons
         stop                Stops daemons
         restart             Restarts daemons
+        deploy              Run tasks in Deployfile
 
     optional arguments:
       -h, --help            show this help message and exit

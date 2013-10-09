@@ -64,17 +64,20 @@ class Process(object):
 class Bureaucrat(object):
     """ Main Class """
 
-    def __init__(self, proc_file, env_file, virtual_env, log_path, debug=False):
+    def __init__(self, proc_file, deploy_file, env_file, virtual_env, log_path, debug=False):
         self.debug = debug
         self.proc_file = proc_file
+        self.deploy_file = deploy_file
         self.env_file = env_file
         self.virtual_env = virtual_env
         self.log_path = log_path
         self.procs = None
+        self.tasks = None  # deploy tasks
         self.proc_file_owner_id = self._get_proc_file_owner_id()
         # Init
         self._set_environment()
         self._parse_proc_file()
+        self._parse_deploy_file()
 
     def start(self):
         """  Start all processes in Procfile """
@@ -92,6 +95,13 @@ class Bureaucrat(object):
         for p in self.procs:
             print "Stopping %s: %s" % (p.name, p.cmd)
             p.kill()
+
+    def deploy(self):
+        """  Run all tasks in Deployfile """
+        for p in self.tasks:
+            print "Running task %s: %s" % (p.name, p.cmd)
+            os.environ['PATH'] = '%s/bin' % self.virtual_env + os.pathsep + os.environ['PATH']
+            p.execute(cwd=self.virtual_env)
 
     def _set_environment(self):
         """ Set environment variables from .env file """
@@ -127,6 +137,28 @@ class Bureaucrat(object):
                 procs.append(p)
         self.procs = procs
 
+    def _parse_deploy_file(self):
+        """ Parse Deployfile
+        :return: list of process objects
+        """
+        procs = []
+        with open(self.deploy_file) as f:
+            for line in f.readlines():
+                match = re.search(r'([a-zA-Z0-9_-]+):(.*)', line)
+                if not match:
+                    raise Exception('Bad Procfile line')
+                name = match.group(1).strip()
+                cmd = match.group(2).strip()
+                p = Process(name, cmd)
+                # Assign pid file
+                p.pid_file = os.path.join(self.virtual_env, '%s.pid' % name)  # FIXME: We might want to put these somewhere else
+                # assign log file
+                p.log_file = os.path.join(self.log_path, '%s.log' % name)
+                procs.append(p)
+        self.tasks = procs
+
+
+
     def _get_proc_file_owner_id(self):
         try:
             return os.stat(self.proc_file).st_uid
@@ -138,9 +170,10 @@ def init_bureaucrat(args):
     """  Initialise Bureaucrat with sane defaults """
     virtual_env = args.venv or os.environ.get('VIRTUAL_ENV', '')  # read env variable from venv, or param, or cwd
     proc_file = args.procfile or os.path.join(virtual_env, 'Procfile')
+    deploy_file = args.deployfile or os.path.join(virtual_env, 'Deployfile')
     env_file = args.envfile or os.path.join(virtual_env, '.env')
     log_path = args.logpath or ''
-    return Bureaucrat(proc_file, env_file, virtual_env, log_path=log_path, debug=False)
+    return Bureaucrat(proc_file, deploy_file, env_file, virtual_env, log_path=log_path, debug=False)
 
 
 def stop(args):
@@ -158,6 +191,12 @@ def restart(args):
     b.stop()
     b.start()
 
+
+def deploy(args):
+    b = init_bureaucrat(args)
+    b.deploy()
+
+
 if __name__ == "__main__":
 
     # Parse command line arguments
@@ -169,6 +208,9 @@ if __name__ == "__main__":
     # Procfile
     procfile = argparse.ArgumentParser(add_help=False)
     procfile.add_argument('--procfile', type=str, help='Procfile path')
+    # Deployfile
+    deployfile = argparse.ArgumentParser(add_help=False)
+    deployfile.add_argument('--deployfile', type=str, help='Deployfile path')
     # .env
     envfile = argparse.ArgumentParser(add_help=False)
     envfile.add_argument('--envfile', type=str, help='.env file path')
@@ -183,7 +225,7 @@ if __name__ == "__main__":
     sp_stop.set_defaults(func=stop)
     sp_restart = sp.add_parser('restart', parents=[venv, procfile, envfile, logpath], help='Restarts daemons')
     sp_restart.set_defaults(func=restart)
+    sp_deploy = sp.add_parser('deploy', parents=[venv, procfile, deployfile, envfile, logpath], help='Run tasks in Deployfile')
+    sp_deploy.set_defaults(func=deploy)
     args = parser.parse_args()
     args.func(args)
-
-
