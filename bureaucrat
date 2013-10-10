@@ -55,7 +55,10 @@ class Process(object):
         # Pass logfile to process (might be handy in the future)
         os.environ['LOGFILE'] = self.log_file
         cmd = str(self.cmd).replace('$LOGFILE', self.log_file)  # replace here, because we're not using a shell it will be executed as literal
-        s = subprocess.Popen(cmd.split(), stdout=open(self.log_file, 'w'), cwd=cwd)  #, bufsize=1
+        try:
+            s = subprocess.Popen(cmd.split(), stdout=open(self.log_file, 'w'), cwd=cwd)  #, bufsize=1
+        except OSError:
+            print "Command %s not found" % cmd
         # write out pid
         with open(self.pid_file, 'w') as f:
             f.write(str(s.pid))
@@ -168,7 +171,7 @@ class Bureaucrat(object):
 
 def init_bureaucrat(args):
     """  Initialise Bureaucrat with sane defaults """
-    virtual_env = args.venv or os.environ.get('VIRTUAL_ENV', '')  # read env variable from venv, or param, or cwd
+    virtual_env = args.venv or os.environ.get('VIRTUAL_ENV', os.getcwd())  # read env variable from venv, or param, or cwd
     proc_file = args.procfile or os.path.join(virtual_env, 'Procfile')
     deploy_file = args.deployfile or os.path.join(virtual_env, 'Deployfile')
     env_file = args.envfile or os.path.join(virtual_env, '.env')
