@@ -56,7 +56,7 @@ class Process(object):
         os.environ['LOGFILE'] = self.log_file
         cmd = str(self.cmd).replace('$LOGFILE', self.log_file)  # replace here, because we're not using a shell it will be executed as literal
         try:
-            s = subprocess.Popen(cmd.split(), stdout=open(self.log_file, 'w'), cwd=cwd)  #, bufsize=1
+            s = subprocess.Popen(cmd.split(), stdout=open(self.log_file, 'w'), stderr=subprocess.STDOUT, cwd=cwd)  #, bufsize=1
         except OSError:
             print "Command %s not found" % cmd
         # write out pid
