@@ -17,7 +17,7 @@ setup(name='bureaucrat',
     ],
     scripts=['bureaucrat'],
     install_requires=[
-            'argparse',
+            'argparse>=1.2.1',
     ],
 )
 
