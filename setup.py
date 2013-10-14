@@ -16,6 +16,9 @@ setup(name='bureaucrat',
         "License :: OSI Approved :: BSD License",
     ],
     scripts=['bureaucrat'],
+    install_requires=[
+            'argparse',
+    ],
 )
 
 
