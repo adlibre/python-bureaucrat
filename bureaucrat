@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 """
-Bureaucrat - the Procfile manager for Python Virtual Environments
+Bureaucrat - The Procfile & Deployfile process manager for Python Virtual Environments
 """
 
 import argparse
@@ -10,14 +10,24 @@ import subprocess
 import signal
 
 
-class Process(object):
+class ProcessLine(object):
     """ Represents a single process instance, eg a line of a Procfile """
 
     def __init__(self, name, cmd):
         self.name = name
         self.cmd = cmd
+
+
+class Process(object):
+    """ Represents a single process manager """
+
+    def __init__(self, name, cmd):
+        self.pl = ProcessLine(name, cmd)
         self.pid_file = None
         self.log_file = None
+        # simplify our representation
+        self.name = self.pl.name
+        self.cmd = self.pl.cmd
 
     def pid(self):
         """
@@ -38,7 +48,7 @@ class Process(object):
             if self.pid():
                 os.kill(self.pid(), signal.SIGTERM)
         except OSError:
-            print "Proc %s (pid: %s) not found." % (self.name, self.pid())
+            print "Proc %s (pid: %s) not found." % (self.pl.name, self.pid())
         finally:
             if self.pid():
                 self.rm_pid()
@@ -51,65 +61,41 @@ class Process(object):
             print "Couldn't remove %s" % self.pid_file
             exit(128)
 
-    def execute(self, cwd):
+    def execute(self, cwd, background=True):
         # Pass logfile to process (might be handy in the future)
         os.environ['LOGFILE'] = self.log_file
-        cmd = str(self.cmd).replace('$LOGFILE', self.log_file)  # replace here, because we're not using a shell it will be executed as literal
+        cmd = str(self.pl.cmd).replace('$LOGFILE', self.log_file)  # replace here, because we're not using a shell it will be executed as literal
         try:
-            s = subprocess.Popen(cmd.split(), stdout=open(self.log_file, 'w'), stderr=subprocess.STDOUT, cwd=cwd)  #, bufsize=1
-        except OSError:
-            print "Command %s not found" % cmd
-        # write out pid
-        with open(self.pid_file, 'w') as f:
-            f.write(str(s.pid))
-
-
-class Bureaucrat(object):
-    """ Main Class """
-
-    def __init__(self, proc_file, deploy_file, env_file, virtual_env, log_path, debug=False):
-        self.debug = debug
-        self.proc_file = proc_file
-        self.deploy_file = deploy_file
-        self.env_file = env_file
-        self.virtual_env = virtual_env
-        self.log_path = log_path
-        self.procs = None
-        self.tasks = None  # deploy tasks
-        self.proc_file_owner_id = self._get_proc_file_owner_id()
-        # Init
-        self._set_environment()
-        self._parse_proc_file()
-        self._parse_deploy_file()
-
-    def start(self):
-        """  Start all processes in Procfile """
-        for p in self.procs:
-            if os.path.exists(p.pid_file):
-                print "Error Launching %s: %s exists" % (p.name, p.pid_file)
+            if background:
+                s = subprocess.Popen(cmd.split(), stdout=open(self.log_file, 'w'), stderr=subprocess.STDOUT, cwd=cwd)
             else:
-                print "Launching %s: %s" % (p.name, p.cmd)
-                # Add virtualenv bin to path (alternatively we source bin/activate)
-                os.environ['PATH'] = '%s/bin' % self.virtual_env + os.pathsep + os.environ['PATH']
-                p.execute(cwd=self.virtual_env)
+                s = subprocess.call(cmd.split(), stdout=open(self.log_file, 'w'), stderr=subprocess.STDOUT, cwd=cwd)
 
-    def stop(self):
-        """  Terminate all processes in Procfile """
-        for p in self.procs:
-            print "Stopping %s: %s" % (p.name, p.cmd)
-            p.kill()
+        except OSError:
+            print "Error: Command %s not found" % cmd.split()[:1]
+        else:
+            if self.pid_file:
+                # write out pid
+                with open(self.pid_file, 'w') as f:
+                    f.write(str(s.pid))
 
-    def deploy(self):
-        """  Run all tasks in Deployfile """
-        for p in self.tasks:
-            print "Running task %s: %s" % (p.name, p.cmd)
-            os.environ['PATH'] = '%s/bin' % self.virtual_env + os.pathsep + os.environ['PATH']
-            p.execute(cwd=self.virtual_env)
 
-    def _set_environment(self):
+class ProcessManager(object):
+    """ Manage all processes in a given process file  """
+
+    def __init__(self, process_file, env_file, log_path, pid_path, create_pid=True, debug=False):
+        self.debug = debug
+        self.create_pid = create_pid
+
+        # Init
+        self._set_environment(env_file)
+        self.processes = self._parse_process_file(process_file, log_path, pid_path)
+
+
+    def _set_environment(self, env_file):
         """ Set environment variables from .env file """
         reg = re.compile('(?P<name>\w+)(\=(?P<value>.+))')
-        for line in open(self.env_file):
+        for line in open(env_file):
             m = reg.match(line)
             if m:
                 name = m.group('name')
@@ -120,48 +106,29 @@ class Bureaucrat(object):
                 if self.debug:
                     print "set %s %s" % (name, value)
 
-    def _parse_proc_file(self):
-        """ Parse Procfile
+    def _parse_process_file(self, process_file, log_path, pid_path):
+        """ Parse Processfile (eg Procfile, Deployfile)
         :return: list of process objects
         """
-        procs = []
-        with open(self.proc_file) as f:
+        processes = []
+        with open(process_file) as f:
             for line in f.readlines():
                 match = re.search(r'([a-zA-Z0-9_-]+):(.*)', line)
                 if not match:
-                    raise Exception('Bad Procfile line')
+                    raise Exception('Bad Process file line')
                 name = match.group(1).strip()
                 cmd = match.group(2).strip()
                 p = Process(name, cmd)
-                # Assign pid file
-                p.pid_file = os.path.join(self.virtual_env, '%s.pid' % name)  # FIXME: We might want to put these somewhere else
-                # assign log file
-                p.log_file = os.path.join(self.log_path, '%s.log' % name)
-                procs.append(p)
-        self.procs = procs
+                if pid_path is not None:
+                    p.pid_file = os.path.join(pid_path, '%s.pid' % name)  # Assign pid file
+                else:
+                    p.pid_file = None
+                print log_path
+                p.log_file = os.path.join(log_path, '%s.log' % name)  # assign log file
+                processes.append(p)
+        return processes
 
-    def _parse_deploy_file(self):
-        """ Parse Deployfile
-        :return: list of process objects
-        """
-        procs = []
-        with open(self.deploy_file) as f:
-            for line in f.readlines():
-                match = re.search(r'([a-zA-Z0-9_-]+):(.*)', line)
-                if not match:
-                    raise Exception('Bad Procfile line')
-                name = match.group(1).strip()
-                cmd = match.group(2).strip()
-                p = Process(name, cmd)
-                # Assign pid file
-                p.pid_file = os.path.join(self.virtual_env, '%s.pid' % name)  # FIXME: We might want to put these somewhere else
-                # assign log file
-                p.log_file = os.path.join(self.log_path, '%s.log' % name)
-                procs.append(p)
-        self.tasks = procs
-
-
-
+    # This is not actually used (yet)
     def _get_proc_file_owner_id(self):
         try:
             return os.stat(self.proc_file).st_uid
@@ -169,34 +136,79 @@ class Bureaucrat(object):
             raise
 
 
-def init_bureaucrat(args):
-    """  Initialise Bureaucrat with sane defaults """
-    virtual_env = args.venv or os.environ.get('VIRTUAL_ENV', os.getcwd())  # read env variable from venv, or param, or cwd
-    proc_file = args.procfile or os.path.join(virtual_env, 'Procfile')
-    deploy_file = args.deployfile or os.path.join(virtual_env, 'Deployfile')
-    env_file = args.envfile or os.path.join(virtual_env, '.env')
-    log_path = args.logpath or ''
-    return Bureaucrat(proc_file, deploy_file, env_file, virtual_env, log_path=log_path, debug=False)
+class Bureaucrat(object):
+    """ Main Class """
+
+    def __init__(self, process_file, env_file, virtual_env, log_path, pid_path, debug=False):
+        self.debug = debug
+        self.virtual_env = virtual_env
+        # Init
+        self.process_manager = ProcessManager(process_file, env_file, log_path, pid_path)
+
+    def start(self):
+        """  Start all processes in Procfile """
+        for p in self.process_manager.processes:
+            if os.path.exists(p.pid_file):
+                print "Error Launching %s: %s exists" % (p.name, p.pid_file)
+            else:
+                print "Launching %s: %s" % (p.name, p.cmd)
+                # Add virtualenv bin to path (alternatively we source bin/activate)
+                os.environ['PATH'] = '%s/bin' % self.virtual_env + os.pathsep + os.environ['PATH']
+                p.execute(cwd=self.virtual_env)
+
+    def stop(self):
+        """  Terminate all processes in Procfile """
+        for p in self.process_manager.processes:
+            print "Stopping %s: %s" % (p.name, p.cmd)
+            p.kill()
+
+    def deploy(self):
+        """  Run all tasks in Deployfile """
+        for p in self.process_manager.processes:
+            print "Running task %s: %s" % (p.name, p.cmd)
+            os.environ['PATH'] = '%s/bin' % self.virtual_env + os.pathsep + os.environ['PATH']
+            p.execute(cwd=self.virtual_env, background=False)
 
 
 def stop(args):
-    b = init_bureaucrat(args)
+    # init
+    virtual_env = args.venv or os.environ.get('VIRTUAL_ENV', os.getcwd())  # read env variable from venv, or param, or cwd
+    process_file = args.procfile or os.path.join(virtual_env, 'Procfile')
+    env_file = args.envfile or os.path.join(virtual_env, '.env')
+    log_path = args.logpath or ''
+    pid_path = args.pidpath or ''
+    # run
+    b = Bureaucrat(process_file, env_file, virtual_env, log_path, pid_path)
     b.stop()
 
 
 def start(args):
-    b = init_bureaucrat(args)
+    # init
+    virtual_env = args.venv or os.environ.get('VIRTUAL_ENV', os.getcwd())  # read env variable from venv, or param, or cwd
+    process_file = args.procfile or os.path.join(virtual_env, 'Procfile')
+    env_file = args.envfile or os.path.join(virtual_env, '.env')
+    log_path = args.logpath or ''
+    pid_path = args.pidpath or ''
+    # run.
+    b = Bureaucrat(process_file, env_file, virtual_env, log_path, pid_path)
     b.start()
 
 
 def restart(args):
-    b = init_bureaucrat(args)
-    b.stop()
-    b.start()
+    stop(args)
+    start(args)
 
 
 def deploy(args):
-    b = init_bureaucrat(args)
+    # init
+    virtual_env = args.venv or os.environ.get('VIRTUAL_ENV', os.getcwd())  # read env variable from venv, or param, or cwd
+    process_file = args.deployfile or os.path.join(virtual_env, 'Deployfile')
+    env_file = args.envfile or os.path.join(virtual_env, '.env')
+    log_path = args.logpath or ''
+    pid_path = None
+    # run
+    b = Bureaucrat(process_file, env_file, virtual_env, log_path, pid_path)
+    b.process_manager.create_pid = False
     b.deploy()
 
 
@@ -204,10 +216,10 @@ if __name__ == "__main__":
 
     # Parse command line arguments
     parser = argparse.ArgumentParser(prog='Bureaucrat',
-                                     description='Bureaucrat - the Procfile manager for Python Virtual Environments')
+                         description='Bureaucrat - the Procfile & Deployfile manager for Python Virtual Environments')
     # Venv root
     venv = argparse.ArgumentParser(add_help=False)
-    venv.add_argument('--venv', type=str, help='Virtual Env Root')
+    venv.add_argument('--venv', type=str, help='Virtualenv root')
     # Procfile
     procfile = argparse.ArgumentParser(add_help=False)
     procfile.add_argument('--procfile', type=str, help='Procfile path')
@@ -220,15 +232,22 @@ if __name__ == "__main__":
     # logpath
     logpath = argparse.ArgumentParser(add_help=False)
     logpath.add_argument('--logpath', type=str, help='log file path')
+    # pidpath
+    pidpath = argparse.ArgumentParser(add_help=False)
+    pidpath.add_argument('--pidpath', type=str, help='pid file path')
     #
     sp = parser.add_subparsers()
-    sp_start = sp.add_parser('start', parents=[venv, procfile, deployfile, envfile, logpath], help='Starts daemons')
+    sp_start = sp.add_parser('start', parents=[venv, procfile, envfile, logpath, pidpath],
+                             help='Starts Procfile processes')
     sp_start.set_defaults(func=start)
-    sp_stop = sp.add_parser('stop', parents=[venv, procfile, deployfile, envfile, logpath], help='Stops daemons')
+    sp_stop = sp.add_parser('stop', parents=[venv, procfile, envfile, logpath, pidpath],
+                            help='Stops Procfile processes')
     sp_stop.set_defaults(func=stop)
-    sp_restart = sp.add_parser('restart', parents=[venv, procfile, deployfile, envfile, logpath], help='Restarts daemons')
+    sp_restart = sp.add_parser('restart', parents=[venv, procfile, envfile, logpath, pidpath],
+                               help='Restarts Procfile processes')
     sp_restart.set_defaults(func=restart)
-    sp_deploy = sp.add_parser('deploy', parents=[venv, procfile, deployfile, envfile, logpath], help='Run tasks in Deployfile')
+    sp_deploy = sp.add_parser('deploy', parents=[venv, deployfile, envfile, logpath],
+                              help='Run tasks in Deployfile')
     sp_deploy.set_defaults(func=deploy)
     args = parser.parse_args()
     args.func(args)

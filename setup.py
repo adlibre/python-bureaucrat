@@ -9,10 +9,10 @@ if sys.version_info < (2, 7):
     install_requires.append('argparse')
 
 setup(name='bureaucrat',
-    version='0.0.3',
+    version='0.1.0',
     author="Andrew Cutler",
     author_email="andrew@adlibre.com.au",
-    description="Procfile process manager for virtual environments",
+    description="Procfile and Deployfile process manager for virtual environments",
     license="BSD",
     long_description=open('README.md').read(),
     url='https://github.com/adlibre/python-bureaucrat',
@@ -24,5 +24,3 @@ setup(name='bureaucrat',
     scripts=['bureaucrat'],
     install_requires=install_requires,
 )
-
-

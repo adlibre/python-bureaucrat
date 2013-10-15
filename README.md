@@ -1,8 +1,9 @@
 # Python Bureaucrat
 
-The Procfile process manager for Python Virtual Environments.
+The _Procfile_ & _Deployfile_ process manager for Python Virtual Environments.
 
-Bureaucrat provides additional support for _Deployfile_ based deployment task management.
+Bureaucrat provides support for _Deployfile_ based deployment task management. A _Deployfile_ is basically a _Procfile_
+by another name. It is used to define the deployment commands for your project.
 
 ## Installation
 
@@ -21,31 +22,47 @@ Basic options are _start_, _stop_, _restart_ and _deploy_.
 
     usage: Bureaucrat [-h] {start,stop,restart,deploy} ...
 
-    Bureaucrat - the Procfile manager for Python Virtual Environments
+    Bureaucrat - the Procfile & Deployfile manager for Python Virtual Environments
 
     positional arguments:
       {start,stop,restart,deploy}
-        start               Starts daemons
-        stop                Stops daemons
-        restart             Restarts daemons
+        start               Starts Procfile processes
+        stop                Stops Procfile processes
+        restart             Restarts Procfile processes
         deploy              Run tasks in Deployfile
 
     optional arguments:
       -h, --help            show this help message and exit
 
+### Additional Arguments
 
 Additional arguments for specifying a custom location for `Procfile`, `.env` and log files.
 
     usage: Bureaucrat start [-h] [--venv VENV] [--procfile PROCFILE]
                             [--envfile ENVFILE] [--logpath LOGPATH]
+                            [--pidpath PIDPATH]
 
     optional arguments:
       -h, --help           show this help message and exit
-      --venv VENV          Virtual Env Root
+      --venv VENV          Virtualenv root
       --procfile PROCFILE  Procfile path
       --envfile ENVFILE    .env file path
       --logpath LOGPATH    log file path
+      --pidpath PIDPATH    pid file path
 
+
+### Deploy
+
+    usage: Bureaucrat deploy [-h] [--venv VENV] [--deployfile DEPLOYFILE]
+                             [--envfile ENVFILE] [--logpath LOGPATH]
+
+    optional arguments:
+      -h, --help            show this help message and exit
+      --venv VENV           Virtualenv root
+      --deployfile DEPLOYFILE
+                            Deployfile path
+      --envfile ENVFILE     .env file path
+      --logpath LOGPATH     log file path
 
 ## Status
 
