@@ -1,6 +1,12 @@
 #!/usr/bin/env python
 
+import sys
 from setuptools import setup
+
+
+install_requires = []
+if sys.version_info < (2, 7):
+    install_requires.append('argparse')
 
 setup(name='bureaucrat',
     version='0.0.3',
@@ -16,9 +22,7 @@ setup(name='bureaucrat',
         "License :: OSI Approved :: BSD License",
     ],
     scripts=['bureaucrat'],
-    install_requires=[
-            'argparse>=1.2.1',
-    ],
+    install_requires=install_requires,
 )
 
 
