@@ -34,7 +34,7 @@ Basic options are _start_, _stop_, _restart_ and _deploy_.
     optional arguments:
       -h, --help            show this help message and exit
 
-### Additional Arguments
+### Start / Stop / Restart Arguments
 
 Additional arguments for specifying a custom location for `Procfile`, `.env` and log files.
 
@@ -50,8 +50,12 @@ Additional arguments for specifying a custom location for `Procfile`, `.env` and
       --logpath LOGPATH    log file path
       --pidpath PIDPATH    pid file path
 
+Example:
 
-### Deploy
+    $ bureaucrat start
+    Launching web: gunicorn project.wsgi:application --log-file log/gunicorn.$LOGFILE --bind unix:run/gunicorn.sock
+
+### Deploy Arguments
 
     usage: Bureaucrat deploy [-h] [--venv VENV] [--deployfile DEPLOYFILE]
                              [--envfile ENVFILE] [--logpath LOGPATH]
@@ -64,7 +68,15 @@ Additional arguments for specifying a custom location for `Procfile`, `.env` and
       --envfile ENVFILE     .env file path
       --logpath LOGPATH     log file path
 
+Example:
+
+    $ bureaucrat deploy
+    Running task syncdb: manage.py syncdb --noinput
+    Running task migrate: manage.py migrate --noinput
+    Running task collectstatic: manage.py collectstatic --noinput
+
 ## Status
 
-Basic functionality exists, however there are still a lot of [features to implement](TODO.md). 
+Basic functionality exists, however there are a few [features to implement](TODO.md).
 This should be considered Alpha status.
+
