@@ -62,9 +62,12 @@ class Process(object):
             exit(128)
 
     def execute(self, cwd, background=True):
+        # FIXME: Better handling (or generic handling) of these ENV->Procfile variable substitutions 
         # Pass logfile to process (might be handy in the future)
         os.environ['LOGFILE'] = self.log_file
         cmd = str(self.pl.cmd).replace('$LOGFILE', self.log_file)  # replace here, because we're not using a shell it will be executed as literal
+        self.port = os.environ['PORT']
+        cmd = str(self.pl.cmd).replace('$PORT', self.port)  # replace here, because we're not using a shell it will be executed as literal
         try:
             if background:
                 s = subprocess.Popen(cmd.split(), stdout=open(self.log_file, 'w'), stderr=subprocess.STDOUT, cwd=cwd)
