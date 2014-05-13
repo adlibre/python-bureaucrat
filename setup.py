@@ -9,7 +9,7 @@ if sys.version_info < (2, 7):
     install_requires.append('argparse')
 
 setup(name='bureaucrat',
-    version='0.1.0',
+    version='0.1.1',
     author="Andrew Cutler",
     author_email="andrew@adlibre.com.au",
     description="Procfile and Deployfile process manager for virtual environments",
