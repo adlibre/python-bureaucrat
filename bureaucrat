@@ -93,7 +93,6 @@ class ProcessManager(object):
         self._set_environment(env_file)
         self.processes = self._parse_process_file(process_file, log_path, pid_path)
 
-
     def _set_environment(self, env_file):
         """ Set environment variables from .env file """
         reg = re.compile('(?P<name>\w+)(\=(?P<value>.+))')
@@ -145,6 +144,10 @@ class Bureaucrat(object):
         self.virtual_env = virtual_env
         # Init
         self.process_manager = ProcessManager(process_file, env_file, log_path, pid_path)
+        # Set Path
+        # Add virtualenv root and bin to path (alternatively we source bin/activate)
+        os.environ['PATH'] = '%s/bin' % self.virtual_env + os.pathsep + \
+            '%s' % self.virtual_env + os.pathsep + os.environ['PATH']
 
     def start(self):
         """  Start all processes in Procfile """
@@ -153,8 +156,6 @@ class Bureaucrat(object):
                 print "Error Launching %s: %s exists" % (p.name, p.pid_file)
             else:
                 print "Launching %s: %s" % (p.name, p.cmd)
-                # Add virtualenv bin to path (alternatively we source bin/activate)
-                os.environ['PATH'] = '%s/bin' % self.virtual_env + os.pathsep + os.environ['PATH']
                 p.execute(cwd=self.virtual_env)
 
     def stop(self):
@@ -167,7 +168,6 @@ class Bureaucrat(object):
         """  Run all tasks in Deployfile """
         for p in self.process_manager.processes:
             print "Running task %s: %s" % (p.name, p.cmd)
-            os.environ['PATH'] = '%s/bin' % self.virtual_env + os.pathsep + os.environ['PATH']
             p.execute(cwd=self.virtual_env, background=False)
 
 
