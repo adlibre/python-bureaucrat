@@ -61,21 +61,20 @@ class Process(object):
             print "Couldn't remove %s" % self.pid_file
             exit(128)
 
+    def expanded_cmd(self):
+        # Replace all environment vars in the cmd path and split
+        return os.path.expandvars(self.pl.cmd).split()
+
     def execute(self, cwd, background=True):
-        # FIXME: Better handling (or generic handling) of these ENV->Procfile variable substitutions 
-        # Pass logfile to process (might be handy in the future)
-        os.environ['LOGFILE'] = self.log_file
-        cmd = str(self.pl.cmd).replace('$LOGFILE', self.log_file)  # replace here, because we're not using a shell it will be executed as literal
-        self.port = os.environ['PORT']
-        cmd = str(self.pl.cmd).replace('$PORT', self.port)  # replace here, because we're not using a shell it will be executed as literal
+        cmd = self.expanded_cmd()
         try:
             if background:
-                s = subprocess.Popen(cmd.split(), stdout=open(self.log_file, 'w'), stderr=subprocess.STDOUT, cwd=cwd)
+                s = subprocess.Popen(cmd, stdout=open(self.log_file, 'w'), stderr=subprocess.STDOUT, cwd=cwd)
             else:
-                s = subprocess.call(cmd.split(), stdout=open(self.log_file, 'w'), stderr=subprocess.STDOUT, cwd=cwd)
+                s = subprocess.call(cmd, stdout=open(self.log_file, 'w'), stderr=subprocess.STDOUT, cwd=cwd)
 
         except OSError:
-            print "Error: Command %s not found" % cmd.split()[:1]
+            print "Error: Command %s not found" % cmd[:1]
         else:
             if self.pid_file:
                 # write out pid
