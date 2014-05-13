@@ -69,7 +69,7 @@ class Process(object):
         cmd = self.expanded_cmd()
         try:
             if background:
-                s = subprocess.Popen(cmd, stdout=open(self.log_file, 'w'), stderr=subprocess.STDOUT, cwd=cwd)
+                s = subprocess.Popen(cmd, stdout=open(self.log_file, 'w'), stderr=open(self.log_file, 'w'), cwd=cwd)
             else:
                 s = subprocess.call(cmd, stdout=open(self.log_file, 'w'), stderr=subprocess.STDOUT, cwd=cwd)
 
