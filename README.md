@@ -1,5 +1,7 @@
 # Python Bureaucrat
 
+[![Latest Version](https://pypip.in/version/bureaucrat/badge.svg)](https://pypi.python.org/pypi/bureaucrat/)
+
 The _Procfile_ & _Deployfile_ process manager for Python Virtual Environments.
 
 Bureaucrat provides support for _Deployfile_ based deployment task management. A _Deployfile_ is basically a _Procfile_
