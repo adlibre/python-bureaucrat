@@ -1,6 +1,6 @@
 # Python Bureaucrat
 
-[![Latest Version](https://pypip.in/version/bureaucrat/badge.svg)](https://pypi.python.org/pypi/bureaucrat/)
+[![PyPI version](https://badge.fury.io/py/bureaucrat.svg)](https://pypi.python.org/pypi/bureaucrat/)
 
 The _Procfile_ & _Deployfile_ process manager for Python Virtual Environments.
 
