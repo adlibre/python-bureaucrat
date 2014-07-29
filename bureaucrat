@@ -213,6 +213,11 @@ def deploy(args):
     b.deploy()
 
 
+def init(args):
+    deploy(args)
+    start(args)
+
+
 if __name__ == "__main__":
 
     # Parse command line arguments
@@ -250,5 +255,8 @@ if __name__ == "__main__":
     sp_deploy = sp.add_parser('deploy', parents=[venv, deployfile, envfile, logpath],
                               help='Run tasks in Deployfile')
     sp_deploy.set_defaults(func=deploy)
+    sp_init = sp.add_parser('init', parents=[venv, deployfile, procfile, envfile, logpath, pidpath],
+                               help='Run Deployfile tasks and then start Procfile processes')
+    sp_init.set_defaults(func=init)
     args = parser.parse_args()
     args.func(args)

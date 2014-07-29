@@ -20,19 +20,20 @@ root.
 
 ## Usage
 
-Basic options are _start_, _stop_, _restart_ and _deploy_.
+Basic options are _start_, _stop_, _restart_, _deploy_ and _init.
 
-    usage: Bureaucrat [-h] {start,stop,restart,deploy} ...
-
+    usage: Bureaucrat [-h] {start,stop,restart,deploy,init} ...
+    
     Bureaucrat - the Procfile & Deployfile manager for Python Virtual Environments
-
+    
     positional arguments:
-      {start,stop,restart,deploy}
+      {start,stop,restart,deploy,init}
         start               Starts Procfile processes
         stop                Stops Procfile processes
         restart             Restarts Procfile processes
         deploy              Run tasks in Deployfile
-
+        init                Run Deployfile tasks and then start Procfile processes
+    
     optional arguments:
       -h, --help            show this help message and exit
 
@@ -81,4 +82,3 @@ Example:
 
 Basic functionality exists, however there are a few [features to implement](TODO.md).
 This should be considered Alpha status.
-
