@@ -128,26 +128,20 @@ class ProcessManager(object):
                 processes.append(p)
         return processes
 
-    # This is not actually used (yet)
-    def _get_proc_file_owner_id(self):
-        try:
-            return os.stat(self.proc_file).st_uid
-        except OSError:
-            raise
-
 
 class Bureaucrat(object):
     """ Main Class """
 
-    def __init__(self, process_file, env_file, virtual_env, log_path, pid_path, debug=False):
+    def __init__(self, process_file, env_file, virtual_env, app_root, log_path, pid_path, debug=False):
         self.debug = debug
         self.virtual_env = virtual_env
+        self.app_root = app_root
         # Init
         self.process_manager = ProcessManager(process_file, env_file, log_path, pid_path)
         # Set Path
         # Add virtualenv root and bin to path (alternatively we source bin/activate)
         os.environ['PATH'] = '%s/bin' % self.virtual_env + os.pathsep + \
-            '%s' % self.virtual_env + os.pathsep + os.environ['PATH']
+            '%s' % self.app_root + os.pathsep + os.environ['PATH']
 
     def start(self):
         """  Start all processes in Procfile """
@@ -174,24 +168,26 @@ class Bureaucrat(object):
 def stop(args):
     # init
     virtual_env = args.venv or os.environ.get('VIRTUAL_ENV', os.getcwd())  # read env variable from venv, or param, or cwd
+    app_root = args.app or args.venv
     process_file = args.procfile or os.path.join(virtual_env, 'Procfile')
     env_file = args.envfile or os.path.join(virtual_env, '.env')
     log_path = args.logpath or ''
     pid_path = args.pidpath or ''
     # run
-    b = Bureaucrat(process_file, env_file, virtual_env, log_path, pid_path)
+    b = Bureaucrat(process_file, env_file, virtual_env, app_root, log_path, pid_path)
     b.stop()
 
 
 def start(args):
     # init
     virtual_env = args.venv or os.environ.get('VIRTUAL_ENV', os.getcwd())  # read env variable from venv, or param, or cwd
+    app_root = args.app or args.venv
     process_file = args.procfile or os.path.join(virtual_env, 'Procfile')
     env_file = args.envfile or os.path.join(virtual_env, '.env')
     log_path = args.logpath or ''
     pid_path = args.pidpath or ''
     # run.
-    b = Bureaucrat(process_file, env_file, virtual_env, log_path, pid_path)
+    b = Bureaucrat(process_file, env_file, virtual_env, app_root, log_path, pid_path)
     b.start()
 
 
@@ -203,12 +199,13 @@ def restart(args):
 def deploy(args):
     # init
     virtual_env = args.venv or os.environ.get('VIRTUAL_ENV', os.getcwd())  # read env variable from venv, or param, or cwd
+    app_root = args.app or args.venv
     process_file = args.deployfile or os.path.join(virtual_env, 'Deployfile')
     env_file = args.envfile or os.path.join(virtual_env, '.env')
     log_path = args.logpath or ''
     pid_path = None
     # run
-    b = Bureaucrat(process_file, env_file, virtual_env, log_path, pid_path)
+    b = Bureaucrat(process_file, env_file, virtual_env, app_root, log_path, pid_path)
     b.process_manager.create_pid = False
     b.deploy()
 
@@ -226,6 +223,9 @@ if __name__ == "__main__":
     # Venv root
     venv = argparse.ArgumentParser(add_help=False)
     venv.add_argument('--venv', type=str, help='Virtualenv root')
+    # Project / app root
+    app = argparse.ArgumentParser(add_help=False)
+    app.add_argument('--app', type=str, help='Application root')
     # Procfile
     procfile = argparse.ArgumentParser(add_help=False)
     procfile.add_argument('--procfile', type=str, help='Procfile path')
@@ -243,19 +243,19 @@ if __name__ == "__main__":
     pidpath.add_argument('--pidpath', type=str, help='pid file path')
     #
     sp = parser.add_subparsers()
-    sp_start = sp.add_parser('start', parents=[venv, procfile, envfile, logpath, pidpath],
+    sp_start = sp.add_parser('start', parents=[venv, app, procfile, envfile, logpath, pidpath],
                              help='Starts Procfile processes')
     sp_start.set_defaults(func=start)
-    sp_stop = sp.add_parser('stop', parents=[venv, procfile, envfile, logpath, pidpath],
+    sp_stop = sp.add_parser('stop', parents=[venv, app, procfile, envfile, logpath, pidpath],
                             help='Stops Procfile processes')
     sp_stop.set_defaults(func=stop)
-    sp_restart = sp.add_parser('restart', parents=[venv, procfile, envfile, logpath, pidpath],
+    sp_restart = sp.add_parser('restart', parents=[venv, app, procfile, envfile, logpath, pidpath],
                                help='Restarts Procfile processes')
     sp_restart.set_defaults(func=restart)
-    sp_deploy = sp.add_parser('deploy', parents=[venv, deployfile, envfile, logpath],
+    sp_deploy = sp.add_parser('deploy', parents=[venv, app, deployfile, envfile, logpath],
                               help='Run tasks in Deployfile')
     sp_deploy.set_defaults(func=deploy)
-    sp_init = sp.add_parser('init', parents=[venv, deployfile, procfile, envfile, logpath, pidpath],
+    sp_init = sp.add_parser('init', parents=[venv, app, deployfile, procfile, envfile, logpath, pidpath],
                                help='Run Deployfile tasks and then start Procfile processes')
     sp_init.set_defaults(func=init)
     args = parser.parse_args()

@@ -41,13 +41,14 @@ Basic options are _start_, _stop_, _restart_, _deploy_ and _init.
 
 Additional arguments for specifying a custom location for `Procfile`, `.env` and log files.
 
-    usage: Bureaucrat start [-h] [--venv VENV] [--procfile PROCFILE]
+    usage: Bureaucrat start [-h] [--venv VENV] [--app APP] [--procfile PROCFILE]
                             [--envfile ENVFILE] [--logpath LOGPATH]
                             [--pidpath PIDPATH]
-
+    
     optional arguments:
       -h, --help           show this help message and exit
       --venv VENV          Virtualenv root
+      --app APP            Application root
       --procfile PROCFILE  Procfile path
       --envfile ENVFILE    .env file path
       --logpath LOGPATH    log file path
@@ -60,12 +61,14 @@ Example:
 
 ### Deploy Arguments
 
-    usage: Bureaucrat deploy [-h] [--venv VENV] [--deployfile DEPLOYFILE]
-                             [--envfile ENVFILE] [--logpath LOGPATH]
-
+    usage: Bureaucrat deploy [-h] [--venv VENV] [--app APP]
+                             [--deployfile DEPLOYFILE] [--envfile ENVFILE]
+                             [--logpath LOGPATH]
+    
     optional arguments:
       -h, --help            show this help message and exit
       --venv VENV           Virtualenv root
+      --app APP             Application root
       --deployfile DEPLOYFILE
                             Deployfile path
       --envfile ENVFILE     .env file path
