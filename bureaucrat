@@ -168,7 +168,7 @@ class Bureaucrat(object):
 def stop(args):
     # init
     virtual_env = args.venv or os.environ.get('VIRTUAL_ENV', os.getcwd())  # read env variable from venv, or param, or cwd
-    app_path = args.app or args.venv
+    app_path = args.app or virtual_env
     process_file = args.procfile or os.path.join(app_path, 'Procfile')
     env_file = args.envfile or os.path.join(app_path, '.env')
     log_path = args.logpath or ''
@@ -181,7 +181,7 @@ def stop(args):
 def start(args):
     # init
     virtual_env = args.venv or os.environ.get('VIRTUAL_ENV', os.getcwd())  # read env variable from venv, or param, or cwd
-    app_path = args.app or args.venv
+    app_path = args.app or virtual_env
     process_file = args.procfile or os.path.join(app_path, 'Procfile')
     env_file = args.envfile or os.path.join(app_path, '.env')
     log_path = args.logpath or ''
@@ -199,7 +199,7 @@ def restart(args):
 def deploy(args):
     # init
     virtual_env = args.venv or os.environ.get('VIRTUAL_ENV', os.getcwd())  # read env variable from venv, or param, or cwd
-    app_path = args.app or args.venv
+    app_path = args.app or virtual_env
     process_file = args.deployfile or os.path.join(app_path, 'Deployfile')
     env_file = args.envfile or os.path.join(app_path, '.env')
     log_path = args.logpath or ''
