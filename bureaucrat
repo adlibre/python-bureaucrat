@@ -132,16 +132,16 @@ class ProcessManager(object):
 class Bureaucrat(object):
     """ Main Class """
 
-    def __init__(self, process_file, env_file, virtual_env, app_root, log_path, pid_path, debug=False):
+    def __init__(self, process_file, env_file, virtual_env, app_path, log_path, pid_path, debug=False):
         self.debug = debug
         self.virtual_env = virtual_env
-        self.app_root = app_root
+        self.app_path = app_path
         # Init
         self.process_manager = ProcessManager(process_file, env_file, log_path, pid_path)
         # Set Path
         # Add virtualenv root and bin to path (alternatively we source bin/activate)
         os.environ['PATH'] = '%s/bin' % self.virtual_env + os.pathsep + \
-            '%s' % self.app_root + os.pathsep + os.environ['PATH']
+            '%s' % self.app_path + os.pathsep + os.environ['PATH']
 
     def start(self):
         """  Start all processes in Procfile """
@@ -150,7 +150,7 @@ class Bureaucrat(object):
                 print "Error Launching %s: %s exists" % (p.name, p.pid_file)
             else:
                 print "Launching %s: %s" % (p.name, p.cmd)
-                p.execute(cwd=self.virtual_env)
+                p.execute(cwd=self.app_path)
 
     def stop(self):
         """  Terminate all processes in Procfile """
@@ -162,32 +162,32 @@ class Bureaucrat(object):
         """  Run all tasks in Deployfile """
         for p in self.process_manager.processes:
             print "Running task %s: %s" % (p.name, p.cmd)
-            p.execute(cwd=self.virtual_env, background=False)
+            p.execute(cwd=self.app_path, background=False)
 
 
 def stop(args):
     # init
     virtual_env = args.venv or os.environ.get('VIRTUAL_ENV', os.getcwd())  # read env variable from venv, or param, or cwd
-    app_root = args.app or args.venv
-    process_file = args.procfile or os.path.join(app_root, 'Procfile')
-    env_file = args.envfile or os.path.join(app_root, '.env')
+    app_path = args.app or args.venv
+    process_file = args.procfile or os.path.join(app_path, 'Procfile')
+    env_file = args.envfile or os.path.join(app_path, '.env')
     log_path = args.logpath or ''
     pid_path = args.pidpath or ''
     # run
-    b = Bureaucrat(process_file, env_file, virtual_env, app_root, log_path, pid_path)
+    b = Bureaucrat(process_file, env_file, virtual_env, app_path, log_path, pid_path)
     b.stop()
 
 
 def start(args):
     # init
     virtual_env = args.venv or os.environ.get('VIRTUAL_ENV', os.getcwd())  # read env variable from venv, or param, or cwd
-    app_root = args.app or args.venv
-    process_file = args.procfile or os.path.join(app_root, 'Procfile')
-    env_file = args.envfile or os.path.join(app_root, '.env')
+    app_path = args.app or args.venv
+    process_file = args.procfile or os.path.join(app_path, 'Procfile')
+    env_file = args.envfile or os.path.join(app_path, '.env')
     log_path = args.logpath or ''
     pid_path = args.pidpath or ''
     # run.
-    b = Bureaucrat(process_file, env_file, virtual_env, app_root, log_path, pid_path)
+    b = Bureaucrat(process_file, env_file, virtual_env, app_path, log_path, pid_path)
     b.start()
 
 
@@ -199,13 +199,13 @@ def restart(args):
 def deploy(args):
     # init
     virtual_env = args.venv or os.environ.get('VIRTUAL_ENV', os.getcwd())  # read env variable from venv, or param, or cwd
-    app_root = args.app or args.venv
-    process_file = args.deployfile or os.path.join(app_root, 'Deployfile')
-    env_file = args.envfile or os.path.join(app_root, '.env')
+    app_path = args.app or args.venv
+    process_file = args.deployfile or os.path.join(app_path, 'Deployfile')
+    env_file = args.envfile or os.path.join(app_path, '.env')
     log_path = args.logpath or ''
     pid_path = None
     # run
-    b = Bureaucrat(process_file, env_file, virtual_env, app_root, log_path, pid_path)
+    b = Bureaucrat(process_file, env_file, virtual_env, app_path, log_path, pid_path)
     b.process_manager.create_pid = False
     b.deploy()
 
