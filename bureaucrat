@@ -169,8 +169,8 @@ def stop(args):
     # init
     virtual_env = args.venv or os.environ.get('VIRTUAL_ENV', os.getcwd())  # read env variable from venv, or param, or cwd
     app_root = args.app or args.venv
-    process_file = args.procfile or os.path.join(virtual_env, 'Procfile')
-    env_file = args.envfile or os.path.join(virtual_env, '.env')
+    process_file = args.procfile or os.path.join(app_root, 'Procfile')
+    env_file = args.envfile or os.path.join(app_root, '.env')
     log_path = args.logpath or ''
     pid_path = args.pidpath or ''
     # run
@@ -182,8 +182,8 @@ def start(args):
     # init
     virtual_env = args.venv or os.environ.get('VIRTUAL_ENV', os.getcwd())  # read env variable from venv, or param, or cwd
     app_root = args.app or args.venv
-    process_file = args.procfile or os.path.join(virtual_env, 'Procfile')
-    env_file = args.envfile or os.path.join(virtual_env, '.env')
+    process_file = args.procfile or os.path.join(app_root, 'Procfile')
+    env_file = args.envfile or os.path.join(app_root, '.env')
     log_path = args.logpath or ''
     pid_path = args.pidpath or ''
     # run.
@@ -200,8 +200,8 @@ def deploy(args):
     # init
     virtual_env = args.venv or os.environ.get('VIRTUAL_ENV', os.getcwd())  # read env variable from venv, or param, or cwd
     app_root = args.app or args.venv
-    process_file = args.deployfile or os.path.join(virtual_env, 'Deployfile')
-    env_file = args.envfile or os.path.join(virtual_env, '.env')
+    process_file = args.deployfile or os.path.join(app_root, 'Deployfile')
+    env_file = args.envfile or os.path.join(app_root, '.env')
     log_path = args.logpath or ''
     pid_path = None
     # run
