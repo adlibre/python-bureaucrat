@@ -8,6 +8,13 @@ import os
 import re
 import subprocess
 import signal
+import time
+
+
+# Config
+EXIT_FATAL = 128
+EXIT_OK = 0
+PROCESS_POLL_INTERVAL = 5
 
 
 class ProcessLine(object):
@@ -23,6 +30,7 @@ class Process(object):
 
     def __init__(self, name, cmd):
         self.pl = ProcessLine(name, cmd)
+        self.sub_process = None
         self.pid_file = None
         self.log_file = None
         # simplify our representation
@@ -59,7 +67,7 @@ class Process(object):
             os.remove(self.pid_file)
         except OSError:
             print "Couldn't remove %s" % self.pid_file
-            exit(128)
+            exit(EXIT_FATAL)
 
     def expanded_cmd(self):
         # Replace all environment vars in the cmd path and split
@@ -69,17 +77,19 @@ class Process(object):
         cmd = self.expanded_cmd()
         try:
             if background:
-                s = subprocess.Popen(cmd, stdout=open(self.log_file, 'w'), stderr=open(self.log_file, 'w'), cwd=cwd)
+                self.sub_process = subprocess.Popen(cmd, cwd=cwd, stdout=open(self.log_file, 'w'), stderr=open(self.log_file, 'w'))
             else:
-                s = subprocess.call(cmd, stdout=open(self.log_file, 'w'), stderr=subprocess.STDOUT, cwd=cwd)
-
+                self.sub_process = subprocess.Popen(cmd, cwd=cwd, stdout=open(self.log_file, 'w'), stderr=subprocess.STDOUT)
+                self.sub_process.wait()
         except OSError:
             print "Error: Command %s not found" % cmd[:1]
+            return False
         else:
             if self.pid_file:
                 # write out pid
-                with open(self.pid_file, 'w') as f:
-                    f.write(str(s.pid))
+                with open(self.pid_file, 'w') as pid:
+                    pid.write(str(self.sub_process.pid))
+            return self.sub_process
 
 
 class ProcessManager(object):
@@ -120,7 +130,7 @@ class ProcessManager(object):
                 name = match.group(1).strip()
                 cmd = match.group(2).strip()
                 p = Process(name, cmd)
-                if pid_path is not None:
+                if pid_path is not None and self.create_pid:
                     p.pid_file = os.path.join(pid_path, '%s.pid' % name)  # Assign pid file
                 else:
                     p.pid_file = None
@@ -150,7 +160,7 @@ class Bureaucrat(object):
                 print "Error Launching %s: %s exists" % (p.name, p.pid_file)
             else:
                 print "Launching %s: %s" % (p.name, p.cmd)
-                p.execute(cwd=self.app_path)
+                p.execute(cwd=self.app_path, background=True)
 
     def stop(self):
         """  Terminate all processes in Procfile """
@@ -163,6 +173,25 @@ class Bureaucrat(object):
         for p in self.process_manager.processes:
             print "Running task %s: %s" % (p.name, p.cmd)
             p.execute(cwd=self.app_path, background=False)
+
+    def monitor(self):
+        while True:
+            alive = False
+            for s in self.process_manager.processes:
+                if s.sub_process is False:
+                    print "Failed to spawn process"
+                    exit(EXIT_FATAL)
+                elif s.sub_process is not None:
+                    s.sub_process.poll()  # update returncode
+                    if s.sub_process.returncode is None:
+                        alive = True
+                    elif s.sub_process.returncode is not 0:
+                        print "Spawned process exited with error: %s (%s)" % (s.name, s.sub_process.returncode)
+                        exit(EXIT_FATAL)
+            if alive is False:
+                print "Spawned processes have exited"
+                exit(EXIT_OK)
+            time.sleep(PROCESS_POLL_INTERVAL)
 
 
 def stop(args):
@@ -189,6 +218,7 @@ def start(args):
     # run.
     b = Bureaucrat(process_file, env_file, virtual_env, app_path, log_path, pid_path)
     b.start()
+    b.monitor()
 
 
 def restart(args):
