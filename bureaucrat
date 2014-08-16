@@ -56,7 +56,7 @@ class Process(object):
             if self.pid():
                 os.kill(self.pid(), signal.SIGTERM)
         except OSError:
-            print "Proc %s (pid: %s) not found." % (self.pl.name, self.pid())
+            print("Proc %s (pid: %s) not found." % (self.pl.name, self.pid()))
         finally:
             if self.pid():
                 self.rm_pid()
@@ -66,7 +66,7 @@ class Process(object):
         try:
             os.remove(self.pid_file)
         except OSError:
-            print "Couldn't remove %s" % self.pid_file
+            print("Couldn't remove %s" % self.pid_file)
             exit(EXIT_FATAL)
 
     def expanded_cmd(self):
@@ -82,7 +82,7 @@ class Process(object):
                 self.sub_process = subprocess.Popen(cmd, cwd=cwd, stdout=open(self.log_file, 'w'), stderr=subprocess.STDOUT)
                 self.sub_process.wait()
         except OSError:
-            print "Error: Command %s not found" % cmd[:1]
+            print("Error: Command %s not found" % cmd[:1])
             return False
         else:
             if self.pid_file:
@@ -115,7 +115,7 @@ class ProcessManager(object):
                     value = m.group('value')
                 os.environ[name] = value
                 if self.debug:
-                    print "set %s %s" % (name, value)
+                    print("set %s %s" % (name, value))
 
     def _parse_process_file(self, process_file, log_path, pid_path):
         """ Parse Processfile (eg Procfile, Deployfile)
@@ -157,21 +157,21 @@ class Bureaucrat(object):
         """  Start all processes in Procfile """
         for p in self.process_manager.processes:
             if os.path.exists(p.pid_file):
-                print "Error Launching %s: %s exists" % (p.name, p.pid_file)
+                print("Error Launching %s: %s exists" % (p.name, p.pid_file))
             else:
-                print "Launching %s: %s" % (p.name, p.cmd)
+                print("Launching %s: %s" % (p.name, p.cmd))
                 p.execute(cwd=self.app_path, background=True)
 
     def stop(self):
         """  Terminate all processes in Procfile """
         for p in self.process_manager.processes:
-            print "Stopping %s: %s" % (p.name, p.cmd)
+            print("Stopping %s: %s" % (p.name, p.cmd))
             p.kill()
 
     def deploy(self):
         """  Run all tasks in Deployfile """
         for p in self.process_manager.processes:
-            print "Running task %s: %s" % (p.name, p.cmd)
+            print("Running task %s: %s" % (p.name, p.cmd))
             p.execute(cwd=self.app_path, background=False)
 
     def monitor(self):
@@ -179,17 +179,17 @@ class Bureaucrat(object):
             alive = False
             for s in self.process_manager.processes:
                 if s.sub_process is False:
-                    print "Failed to spawn process"
+                    print("Failed to spawn process")
                     exit(EXIT_FATAL)
                 elif s.sub_process is not None:
                     s.sub_process.poll()  # update returncode
                     if s.sub_process.returncode is None:
                         alive = True
                     elif s.sub_process.returncode is not 0:
-                        print "Spawned process exited with error: %s (%s)" % (s.name, s.sub_process.returncode)
+                        print("Spawned process exited with error: %s (%s)" % (s.name, s.sub_process.returncode))
                         exit(EXIT_FATAL)
             if alive is False:
-                print "Spawned processes have exited"
+                print("Spawned processes have exited")
                 exit(EXIT_OK)
             time.sleep(PROCESS_POLL_INTERVAL)
 
