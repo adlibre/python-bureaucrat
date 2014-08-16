@@ -12,4 +12,4 @@ install:
   - pip install coveralls
 
 script:
-  - bureaucrat
+  - bureaucrat -h
