@@ -109,4 +109,4 @@ Example:
 ## Status
 
 Basic functionality exists, however there are a few [features to implement](TODO.md).
-This should be considered Alpha status.
+This should be considered Beta status.
