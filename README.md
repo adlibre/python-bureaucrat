@@ -10,14 +10,38 @@ by another name. It is used to define the deployment commands for your project.
 
 ## Installation
 
-Install with `pip install -e git+git@github.com:adlibre/python-bureaucrat.git#egg=bureaucrat` or 
-`pip install git+https://github.com/adlibre/python-bureaucrat.git#egg=bureaucrat`.
+Install from [PyPI](https://pypi.python.org/pypi/bureaucrat/) with `pip install bureaucrat`
+
+Install from source
+`pip install git+https://github.com/adlibre/python-bureaucrat.git#egg=bureaucrat` or  `pip install -e git+git@github.com:adlibre/python-bureaucrat.git#egg=bureaucrat` (editable).
 
 ## Config
 
 To use Bureaucrat you will need to have created a [Procfile](https://devcenter.heroku.com/articles/procfile), Deployfile
 and [.env](https://devcenter.heroku.com/articles/procfile#setting-local-environment-variables) file in your virtual env
 root.
+
+### Sample _Procfile_
+
+The following is shows a single gunicorn web process.
+
+    web: gunicorn project.wsgi:application --workers $WORKERS --log-file $LOGFILE --bind 0.0.0.0:$PORT --timeout 300 --workers $WORKERS
+
+
+### Sample _Deployfile_
+
+The following is suitable for a Django app deployment.
+
+    pip: pip install -r requirements.txt
+    syncdb: manage.py syncdb --noinput
+    migrate: manage.py migrate --noinput
+    collectstatic: manage.py collectstatic --noinput
+    
+### Sample _.env_
+
+    WORKERS=4
+    LOGFILE=/var/log/django-project.log
+    PORT=8000
 
 ## Usage
 
