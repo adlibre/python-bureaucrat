@@ -8,6 +8,7 @@ import os
 import re
 import subprocess
 import signal
+import sys
 import time
 
 
@@ -288,5 +289,8 @@ if __name__ == "__main__":
     sp_init = sp.add_parser('init', parents=[venv, app, deployfile, procfile, envfile, logpath, pidpath],
                                help='Run Deployfile tasks and then start Procfile processes')
     sp_init.set_defaults(func=init)
-    args = parser.parse_args()
-    args.func(args)
+
+    # Init parser if args passed
+    if len(sys.argv) > 1:
+        args = parser.parse_args()
+        args.func(args)
