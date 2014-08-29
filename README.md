@@ -108,5 +108,4 @@ Example:
 
 ## Status
 
-Basic functionality exists, however there are a few [features to implement](TODO.md).
-This should be considered Beta status.
+This used by [Volt Grid](https://www.voltgrid.com/) to support Python environments.

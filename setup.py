@@ -3,7 +3,7 @@
 import sys
 from setuptools import setup
 
-VERSION = '0.2.1'
+VERSION = '0.2.2'
 
 install_requires = []
 if sys.version_info < (2, 7):
@@ -27,12 +27,18 @@ setup(name='bureaucrat',
     url='https://github.com/adlibre/python-bureaucrat',
     download_url='https://github.com/adlibre/python-bureaucrat/archive/v%s.tar.gz' % VERSION,
     classifiers=[
-        "Development Status :: 4 - Beta",
+        "Development Status :: 5 - Production/Stable",
         "Environment :: Console",
         "Intended Audience :: Developers",
         "License :: OSI Approved :: BSD License",
         "Operating System :: Unix",
         "Programming Language :: Python",
+        "Programming Language :: Python :: 2.6",
+        "Programming Language :: Python :: 2.7",
+        "Programming Language :: Python :: 3.2",
+        "Programming Language :: Python :: 3.3",
+        "Programming Language :: Python :: 3.4",
+        "Topic :: System :: Software Distribution",
         "Topic :: Utilities",
     ],
     scripts=['bureaucrat'],
