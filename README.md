@@ -13,8 +13,7 @@ by another name. It is used to define the deployment commands for your project.
 
 Install from [PyPI](https://pypi.python.org/pypi/bureaucrat/) with `pip install bureaucrat`
 
-Install from source
-`pip install git+https://github.com/adlibre/python-bureaucrat.git#egg=bureaucrat` or  `pip install -e git+git@github.com:adlibre/python-bureaucrat.git#egg=bureaucrat` (editable).
+Install from source with `pip install git+https://github.com/adlibre/python-bureaucrat.git#egg=bureaucrat`.   
 
 ## Config
 
