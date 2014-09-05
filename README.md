@@ -25,7 +25,7 @@ root.
 
 The following is shows a single gunicorn web process.
 
-    web: gunicorn project.wsgi:application --workers $WORKERS --log-file $LOGFILE --bind 0.0.0.0:$PORT --timeout 300 --workers $WORKERS
+    web: gunicorn project.wsgi:application --workers $WORKERS --log-file $LOGFILE --bind 0.0.0.0:$PORT --timeout 300
 
 
 ### Sample _Deployfile_
