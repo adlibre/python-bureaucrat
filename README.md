@@ -6,8 +6,7 @@
 
 The _Procfile_ & _Deployfile_ process manager for Python Virtual Environments.
 
-Bureaucrat provides support for _Deployfile_ based deployment task management. A _Deployfile_ is basically a _Procfile_
-by another name. It is used to define the deployment commands for your project.
+Bureaucrat provides support for _Deployfile_ based deployment task management. A _Deployfile_ is basically a _Procfile_ by another name. It is used to define the deployment commands for your project.
 
 ## Installation
 
@@ -17,9 +16,8 @@ Install from source with `pip install git+https://github.com/adlibre/python-bure
 
 ## Config
 
-To use Bureaucrat you will need to have created a [Procfile](https://devcenter.heroku.com/articles/procfile), Deployfile
-and [.env](https://devcenter.heroku.com/articles/procfile#setting-local-environment-variables) file in your virtual env
-root.
+To use Bureaucrat you will need to create a [Procfile](https://devcenter.heroku.com/articles/procfile), Deployfile
+and [.env](https://devcenter.heroku.com/articles/procfile#setting-local-environment-variables) file in your virtual env root.
 
 ### Sample _Procfile_
 
