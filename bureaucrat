@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/Users/andrew/django/virtualenvs/pypydjango/bin/pypy
 """
 Bureaucrat - The Procfile & Deployfile process manager for Python Virtual Environments
 """
@@ -153,6 +153,8 @@ class Bureaucrat(object):
         # Add virtualenv root and bin to path (alternatively we source bin/activate)
         os.environ['PATH'] = '%s/bin' % self.virtual_env + os.pathsep + \
             '%s' % self.app_path + os.pathsep + os.environ['PATH']
+        # Listen for shutdown
+        signal.signal(signal.SIGTERM, self._sigterm_handler)
 
     def start(self):
         """  Start all processes in Procfile """
@@ -175,25 +177,35 @@ class Bureaucrat(object):
             print("Running task %s: %s" % (p.name, p.cmd))
             p.execute(cwd=self.app_path, background=False)
 
+    def _sigterm_handler(self, signal, frame):
+        """ SIGTERM, eg kill handler """
+        print('Got SIGTERM. Shutting down.')
+        self.stop()
+        sys.exit(0)
+
     def monitor(self):
         while True:
-            alive = False
-            for s in self.process_manager.processes:
-                if s.sub_process is False:
-                    print("Failed to spawn process")
-                    exit(EXIT_FATAL)
-                elif s.sub_process is not None:
-                    s.sub_process.poll()  # update returncode
-                    if s.sub_process.returncode is None:
-                        alive = True
-                    elif s.sub_process.returncode is not 0:
-                        print("Spawned process exited with error: %s (%s)" % (s.name, s.sub_process.returncode))
+            try:
+                alive = False
+                for s in self.process_manager.processes:
+                    if s.sub_process is False:
+                        print("Failed to spawn process")
                         exit(EXIT_FATAL)
-            if alive is False:
-                print("Spawned processes have exited")
-                exit(EXIT_OK)
-            time.sleep(PROCESS_POLL_INTERVAL)
-
+                    elif s.sub_process is not None:
+                        s.sub_process.poll()  # update returncode
+                        if s.sub_process.returncode is None:
+                            alive = True
+                        elif s.sub_process.returncode is not 0:
+                            print("Spawned process exited with error: %s (%s)" % (s.name, s.sub_process.returncode))
+                            exit(EXIT_FATAL)
+                if alive is False:
+                    print("Spawned processes have exited")
+                    exit(EXIT_OK)
+                time.sleep(PROCESS_POLL_INTERVAL)
+            except KeyboardInterrupt:
+                print('Shutting down.')
+                self.stop()
+                sys.exit(0)
 
 def stop(args):
     # init
