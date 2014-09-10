@@ -1,7 +1,5 @@
 #!/usr/bin/env python
-"""
-Bureaucrat - The Procfile & Deployfile process manager for Python Virtual Environments
-"""
+""" Bureaucrat - The Procfile & Deployfile process manager for Python Virtual Environments """
 
 import argparse
 import os
@@ -78,9 +76,11 @@ class Process(object):
         cmd = self.expanded_cmd()
         try:
             if background:
-                self.sub_process = subprocess.Popen(cmd, cwd=cwd, stdout=open(self.log_file, 'w'), stderr=open(self.log_file, 'w'))
+                self.sub_process = subprocess.Popen(cmd, cwd=cwd, stdout=open(self.log_file, 'w'),
+                                                    stderr=open(self.log_file, 'w'))
             else:
-                self.sub_process = subprocess.Popen(cmd, cwd=cwd, stdout=open(self.log_file, 'w'), stderr=subprocess.STDOUT)
+                self.sub_process = subprocess.Popen(cmd, cwd=cwd, stdout=open(self.log_file, 'w'),
+                                                    stderr=subprocess.STDOUT)
                 self.sub_process.wait()
         except OSError:
             print("Error: Command %s not found" % cmd[:1])
@@ -207,9 +207,10 @@ class Bureaucrat(object):
                 self.stop()
                 sys.exit(0)
 
+
 def stop(args):
     # init
-    virtual_env = args.venv or os.environ.get('VIRTUAL_ENV', os.getcwd())  # read env variable from venv, or param, or cwd
+    virtual_env = args.venv or os.environ.get('VIRTUAL_ENV', os.getcwd())  # read env var from venv or param or cwd
     app_path = args.app or virtual_env
     process_file = args.procfile or os.path.join(app_path, 'Procfile')
     env_file = args.envfile or os.path.join(app_path, '.env')
@@ -222,7 +223,7 @@ def stop(args):
 
 def start(args):
     # init
-    virtual_env = args.venv or os.environ.get('VIRTUAL_ENV', os.getcwd())  # read env variable from venv, or param, or cwd
+    virtual_env = args.venv or os.environ.get('VIRTUAL_ENV', os.getcwd())  # read env var from venv or param or cwd
     app_path = args.app or virtual_env
     process_file = args.procfile or os.path.join(app_path, 'Procfile')
     env_file = args.envfile or os.path.join(app_path, '.env')
@@ -241,7 +242,7 @@ def restart(args):
 
 def deploy(args):
     # init
-    virtual_env = args.venv or os.environ.get('VIRTUAL_ENV', os.getcwd())  # read env variable from venv, or param, or cwd
+    virtual_env = args.venv or os.environ.get('VIRTUAL_ENV', os.getcwd())  # read env var from venv or param or cwd
     app_path = args.app or virtual_env
     process_file = args.deployfile or os.path.join(app_path, 'Deployfile')
     env_file = args.envfile or os.path.join(app_path, '.env')
