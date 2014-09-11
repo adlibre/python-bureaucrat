@@ -1,7 +1,7 @@
 import unittest
 import os
 
-import bureaucrat
+import .bureaucrat
 
 
 TESTS_PATH = os.path.abspath(os.path.split(__file__)[0])
