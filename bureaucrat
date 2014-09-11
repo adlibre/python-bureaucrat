@@ -51,14 +51,13 @@ class Process(object):
 
     def kill(self):
         # kill process
+        print("Stopping %s: %s" % (self.name, self.cmd))
         try:
-            if self.pid():
-                os.kill(self.pid(), signal.SIGTERM)
+            os.kill(self.pid(), signal.SIGTERM)
         except OSError:
-            print("Proc %s (pid: %s) not found." % (self.pl.name, self.pid()))
+            print("Proc %s (pid: %s) not found." % (self.name, self.pid()))
         finally:
-            if self.pid():
-                self.rm_pid()
+            self.rm_pid()
 
     def rm_pid(self):
         # remove pid
@@ -66,13 +65,18 @@ class Process(object):
             os.remove(self.pid_file)
         except OSError:
             print("Couldn't remove %s" % self.pid_file)
-            exit(EXIT_FATAL)
+            sys.exit(EXIT_FATAL)
 
     def expanded_cmd(self):
         # Replace all environment vars in the cmd path and split
         return os.path.expandvars(self.pl.cmd).split()
 
     def execute(self, cwd, background=True):
+        if self.pid_file and os.path.exists(self.pid_file):
+            print("Error Launching %s: %s exists" % (self.name, self.pid_file))
+            return False
+        else:
+            print("Launching %s: %s" % (self.name, self.cmd))
         cmd = self.expanded_cmd()
         try:
             if background:
@@ -143,7 +147,7 @@ class ProcessManager(object):
 class Bureaucrat(object):
     """ Main Class """
 
-    def __init__(self, process_file, env_file, virtual_env, app_path, log_path, pid_path, debug=False):
+    def __init__(self, process_file, env_file, virtual_env, app_path, log_path, pid_path, named_procs, debug=False):
         self.debug = debug
         self.virtual_env = virtual_env
         self.app_path = app_path
@@ -153,22 +157,19 @@ class Bureaucrat(object):
         # Add virtualenv root and bin to path (alternatively we source bin/activate)
         os.environ['PATH'] = '%s/bin' % self.virtual_env + os.pathsep + \
             '%s' % self.app_path + os.pathsep + os.environ['PATH']
+        if named_procs is not None and len(named_procs) > 0:  # truncate processes
+            self.process_manager.processes = [p for p in self.process_manager.processes if p.name in named_procs]
         # Listen for shutdown
         signal.signal(signal.SIGTERM, self._sigterm_handler)
 
     def start(self):
-        """  Start all processes in Procfile """
+        """  Start processes defined in Procfile """
         for p in self.process_manager.processes:
-            if os.path.exists(p.pid_file):
-                print("Error Launching %s: %s exists" % (p.name, p.pid_file))
-            else:
-                print("Launching %s: %s" % (p.name, p.cmd))
-                p.execute(cwd=self.app_path, background=True)
+            p.execute(cwd=self.app_path, background=True)
 
     def stop(self):
-        """  Terminate all processes in Procfile """
+        """  Terminate processes defined in Procfile """
         for p in self.process_manager.processes:
-            print("Stopping %s: %s" % (p.name, p.cmd))
             p.kill()
 
     def deploy(self):
@@ -181,31 +182,42 @@ class Bureaucrat(object):
         """ SIGTERM, eg kill handler """
         print('Got SIGTERM. Shutting down.')
         self.stop()
-        sys.exit(0)
+        sys.exit(EXIT_OK)
+
+    @staticmethod
+    def _check_running(processes):
+        running = False
+        for p in processes:
+            if p.sub_process is False:
+                print('Failed to spawn process')
+                sys.exit(EXIT_FATAL)
+            elif p.sub_process is not None:
+                p.sub_process.poll()  # update returncode
+                if p.sub_process.returncode is None:
+                    running = True
+                elif p.sub_process.returncode is 0:
+                    print("Spawned process ended: %s (%s)" %
+                          (p.name, p.sub_process.returncode))
+                    p.rm_pid()
+                elif p.sub_process.returncode is not 0:
+                    print("Spawned process exited with error: %s (%s)" %
+                          (p.name, p.sub_process.returncode))
+                    sys.exit(EXIT_FATAL)  # bail out
+        return running
 
     def monitor(self):
-        while True:
-            try:
-                alive = False
-                for s in self.process_manager.processes:
-                    if s.sub_process is False:
-                        print("Failed to spawn process")
-                        exit(EXIT_FATAL)
-                    elif s.sub_process is not None:
-                        s.sub_process.poll()  # update returncode
-                        if s.sub_process.returncode is None:
-                            alive = True
-                        elif s.sub_process.returncode is not 0:
-                            print("Spawned process exited with error: %s (%s)" % (s.name, s.sub_process.returncode))
-                            exit(EXIT_FATAL)
-                if alive is False:
-                    print("Spawned processes have exited")
-                    exit(EXIT_OK)
+        """ Monitor processes defined in Procfile """
+        try:
+            while True:
+                # Monitor all processes
+                if self._check_running(self.process_manager.processes) is False:
+                    print('Spawned processes have ended.')
+                    sys.exit(EXIT_OK)
                 time.sleep(PROCESS_POLL_INTERVAL)
-            except KeyboardInterrupt:
-                print('Shutting down.')
-                self.stop()
-                sys.exit(0)
+        except KeyboardInterrupt:
+            print('Shutting down.')
+            self.stop()
+            sys.exit(EXIT_OK)
 
 
 def stop(args):
@@ -216,8 +228,9 @@ def stop(args):
     env_file = args.envfile or os.path.join(app_path, '.env')
     log_path = args.logpath or ''
     pid_path = args.pidpath or ''
+    named_procs = set(args.process)
     # run
-    b = Bureaucrat(process_file, env_file, virtual_env, app_path, log_path, pid_path)
+    b = Bureaucrat(process_file, env_file, virtual_env, app_path, log_path, pid_path, named_procs)
     b.stop()
 
 
@@ -229,8 +242,9 @@ def start(args):
     env_file = args.envfile or os.path.join(app_path, '.env')
     log_path = args.logpath or ''
     pid_path = args.pidpath or ''
+    named_procs = set(args.process)
     # run.
-    b = Bureaucrat(process_file, env_file, virtual_env, app_path, log_path, pid_path)
+    b = Bureaucrat(process_file, env_file, virtual_env, app_path, log_path, pid_path, named_procs)
     b.start()
     b.monitor()
 
@@ -248,8 +262,9 @@ def deploy(args):
     env_file = args.envfile or os.path.join(app_path, '.env')
     log_path = args.logpath or ''
     pid_path = None
+    named_procs = None
     # run
-    b = Bureaucrat(process_file, env_file, virtual_env, app_path, log_path, pid_path)
+    b = Bureaucrat(process_file, env_file, virtual_env, app_path, log_path, pid_path, named_procs)
     b.process_manager.create_pid = False
     b.deploy()
 
@@ -285,20 +300,28 @@ if __name__ == "__main__":
     # pidpath
     pidpath = argparse.ArgumentParser(add_help=False)
     pidpath.add_argument('--pidpath', type=str, help='pid file path')
-    #
+    # Start
     sp = parser.add_subparsers()
     sp_start = sp.add_parser('start', parents=[venv, app, procfile, envfile, logpath, pidpath],
                              help='Starts Procfile processes')
+    sp_start.add_argument('process', nargs='*', type=str, help='Procfile Process Name')
     sp_start.set_defaults(func=start)
+    # Stop
     sp_stop = sp.add_parser('stop', parents=[venv, app, procfile, envfile, logpath, pidpath],
                             help='Stops Procfile processes')
+    sp_stop.add_argument('process', nargs='*', type=str, help='Procfile Process Name')
     sp_stop.set_defaults(func=stop)
+    # Restart
     sp_restart = sp.add_parser('restart', parents=[venv, app, procfile, envfile, logpath, pidpath],
                                help='Restarts Procfile processes')
+    sp_restart.add_argument('process', nargs='*', type=str, help='Procfile Process Name')
     sp_restart.set_defaults(func=restart)
+    # Deploy
     sp_deploy = sp.add_parser('deploy', parents=[venv, app, deployfile, envfile, logpath],
                               help='Run tasks in Deployfile')
+    sp_deploy.add_argument('process', nargs='*', type=str, help='Procfile Process Name')
     sp_deploy.set_defaults(func=deploy)
+    # Init
     sp_init = sp.add_parser('init', parents=[venv, app, deployfile, procfile, envfile, logpath, pidpath],
                                help='Run Deployfile tasks and then start Procfile processes')
     sp_init.set_defaults(func=init)
