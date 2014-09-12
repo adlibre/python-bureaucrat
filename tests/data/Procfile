@@ -1,2 +1,3 @@
-true: true
-sleep: sleep 5
+sleep0: sleep 0
+sleep5: sleep 5
+sleep10: sleep 10
