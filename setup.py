@@ -3,7 +3,7 @@
 import sys
 from setuptools import setup
 
-VERSION = '0.2.4'
+VERSION = '0.2.5'
 
 install_requires = []
 if sys.version_info < (2, 7):
