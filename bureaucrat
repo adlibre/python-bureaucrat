@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/Users/andrew/django/virtualenvs/vgrefactor/bin/python
 """ Bureaucrat - The Procfile & Deployfile process manager for Python Virtual Environments """
 
 import argparse
@@ -239,17 +239,20 @@ def bureaucrat_init(args):
     env_file = args.envfile or os.path.join(app_path, '.env')
 
     if hasattr(args, 'procfile'):
-        process_file = args.procfile
+        process_file = args.procfile or os.path.join(app_path, 'Procfile')
     else:
         process_file = os.path.join(app_path, 'Procfile')
+
     if hasattr(args, 'process'):
-        named_procs = set(args.process)
+        named_procs = set(args.process) or set(os.environ.get('PROCFILE_TASKS', '').split()) or None
     else:
         named_procs = set(os.environ.get('PROCFILE_TASKS', '').split()) or None
+
     if hasattr(args, 'pid_path'):
-            pid_path = args.pidpath
+            pid_path = args.pidpath or ''
     else:
         pid_path = ''
+
     log_path = args.logpath or ''
     b = Bureaucrat(process_file, env_file, virtual_env, app_path, log_path, pid_path, named_procs)
     if hasattr(args, 'no_pid'):
