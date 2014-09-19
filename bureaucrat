@@ -58,7 +58,10 @@ class Process(object):
 
     def kill(self):
         # kill process
-        if self.sub_process.returncode is None:
+        if hasattr(self.sub_process, 'returncode') and self.sub_process.returncode is not None:
+            self.ended = True
+            return
+        else:
             print("Stopping %s: %s" % (self.name, self.cmd))
             try:
                 os.kill(self.pid, signal.SIGTERM)
@@ -83,10 +86,10 @@ class Process(object):
 
     def execute(self, cwd, background=True):
         if self.pid_file and os.path.exists(self.pid_file):
-            print("Error Launching %s: %s exists" % (self.name, self.pid_file))
+            print("Error %s: %s exists" % (self.name, self.pid_file))
             return False
         else:
-            print("Launching %s: %s" % (self.name, self.cmd))
+            print("%s: %s" % (self.name, self.cmd))
         cmd = self.expanded_cmd()
         try:
             if background:
@@ -110,7 +113,7 @@ class Process(object):
 class ProcessManager(object):
     """ Manage all processes in a given process file  """
 
-    def __init__(self, process_file, env_file, log_path, pid_path, create_pids=True, debug=False):
+    def __init__(self, process_file, env_file, log_path, pid_path, create_pids, debug=False):
         self.debug = debug
         self.create_pids = create_pids
 
@@ -157,12 +160,12 @@ class ProcessManager(object):
 class Bureaucrat(object):
     """ Main Class """
 
-    def __init__(self, process_file, env_file, virtual_env, app_path, log_path, pid_path, named_procs, debug=False):
+    def __init__(self, process_file, env_file, virtual_env, app_path, log_path, pid_path, named_procs, create_pids=True, debug=False):
         self.debug = debug
         self.virtual_env = virtual_env
         self.app_path = app_path
         # Init
-        self.process_manager = ProcessManager(process_file, env_file, log_path, pid_path)
+        self.process_manager = ProcessManager(process_file, env_file, log_path, pid_path, create_pids)
         # Set Path
         # Add virtualenv root and bin to path (alternatively we source bin/activate)
         os.environ['PATH'] = '%s/bin' % self.virtual_env + os.pathsep + \
@@ -175,6 +178,7 @@ class Bureaucrat(object):
     def start(self):
         """  Start processes defined in Procfile """
         for p in self.process_manager.processes:
+            sys.stdout.write("Spawning ")
             p.execute(cwd=self.app_path, background=True)
 
     def stop(self):
@@ -185,7 +189,7 @@ class Bureaucrat(object):
     def deploy(self):
         """  Run all tasks in Deployfile """
         for p in self.process_manager.processes:
-            print("Running task %s: %s" % (p.name, p.cmd))
+            sys.stdout.write("Running task ")
             p.execute(cwd=self.app_path, background=False)
 
     def _sigterm_handler(self, signal, frame):
@@ -232,16 +236,18 @@ class Bureaucrat(object):
             sys.exit(EXIT_OK)
 
 
-def bureaucrat_init(args):
+
+
+def bureaucrat_args_init(args, process_file='procfile', create_pids=True):
     # init
     virtual_env = args.venv or os.environ.get('VIRTUAL_ENV', os.getcwd())  # read env var from venv or param or cwd
     app_path = args.app or virtual_env
     env_file = args.envfile or os.path.join(app_path, '.env')
 
-    if hasattr(args, 'procfile'):
+    if process_file == 'procfile':
         process_file = args.procfile or os.path.join(app_path, 'Procfile')
     else:
-        process_file = os.path.join(app_path, 'Procfile')
+        process_file = args.deployfile or os.path.join(app_path, 'Deployfile')
 
     if hasattr(args, 'process'):
         named_procs = set(args.process) or set(os.environ.get('PROCFILE_TASKS', '').split()) or None
@@ -253,40 +259,39 @@ def bureaucrat_init(args):
     else:
         pid_path = ''
 
-    log_path = args.logpath or ''
-    b = Bureaucrat(process_file, env_file, virtual_env, app_path, log_path, pid_path, named_procs)
     if hasattr(args, 'no_pid'):
         if args.no_pid:
-            b.process_manager.create_pids = False
+            create_pids = False
+
+    log_path = args.logpath or ''
+    b = Bureaucrat(process_file, env_file, virtual_env, app_path, log_path, pid_path, named_procs, create_pids)
     return b
 
 
 def stop(args):
-    b = bureaucrat_init(args)
+    b = bureaucrat_args_init(args)
     return b.stop()
 
 
 def start(args):
-    b = bureaucrat_init(args)
+    b = bureaucrat_args_init(args)
     return b.start()
 
 
 def restart(args):
-    b = bureaucrat_init(args)
+    b = bureaucrat_args_init(args)
     b.stop()
     b.start()
 
 
 def deploy(args):
-    b = bureaucrat_init(args)
-    b.process_manager.create_pids = False
+    b = bureaucrat_args_init(args, process_file='deployfile', create_pids=False)
     b.deploy()
 
 
 def init(args):
     deploy(args)
-    b = bureaucrat_init(args)
-    b.process_manager.create_pids = False
+    b = bureaucrat_args_init(args, create_pids=False)
     b.start()
     b.monitor()
 
