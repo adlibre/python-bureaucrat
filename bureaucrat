@@ -236,11 +236,21 @@ def bureaucrat_init(args):
     # init
     virtual_env = args.venv or os.environ.get('VIRTUAL_ENV', os.getcwd())  # read env var from venv or param or cwd
     app_path = args.app or virtual_env
-    process_file = args.procfile or os.path.join(app_path, 'Procfile')
     env_file = args.envfile or os.path.join(app_path, '.env')
+
+    if hasattr(args, 'procfile'):
+        process_file = args.procfile
+    else:
+        process_file = os.path.join(app_path, 'Procfile')
+    if hasattr(args, 'process'):
+        named_procs = set(args.process)
+    else:
+        named_procs = set(os.environ.get('PROCFILE_TASKS', '').split()) or None
+    if hasattr(args, 'pid_path'):
+            pid_path = args.pidpath
+    else:
+        pid_path = ''
     log_path = args.logpath or ''
-    pid_path = args.pidpath or ''
-    named_procs = set(args.process) or set(os.environ.get('PROCFILE_TASKS', '').split()) or None
     b = Bureaucrat(process_file, env_file, virtual_env, app_path, log_path, pid_path, named_procs)
     if hasattr(args, 'no_pid'):
         if args.no_pid:
