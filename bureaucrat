@@ -242,7 +242,9 @@ def bureaucrat_init(args):
     pid_path = args.pidpath or ''
     named_procs = set(args.process) or set(os.environ.get('PROCFILE_TASKS', '').split()) or None
     b = Bureaucrat(process_file, env_file, virtual_env, app_path, log_path, pid_path, named_procs)
-    b.process_manager.create_pids = args.no_pid or True
+    if hasattr(args, 'no_pid'):
+        if args.no_pid:
+            b.process_manager.create_pids = False
     return b
 
 
@@ -305,29 +307,28 @@ if __name__ == "__main__":
     # don't create pid
     no_pid = argparse.ArgumentParser(add_help=False)
     no_pid.add_argument('--no-create-pid', action='store_true', help='Don\'t create PID files')
+    # process name
+    process_name = argparse.ArgumentParser(add_help=False)
+    process_name.add_argument('process', nargs='*', type=str, help='Procfile Process Name')
     # Start
     sp = parser.add_subparsers()
-    sp_start = sp.add_parser('start', parents=[venv, app, procfile, envfile, logpath, pidpath],
+    sp_start = sp.add_parser('start', parents=[venv, app, procfile, envfile, logpath, pidpath, process_name],
                              help='Starts Procfile processes')
-    sp_start.add_argument('process', nargs='*', type=str, help='Procfile Process Name')
     sp_start.set_defaults(func=start)
     # Stop
-    sp_stop = sp.add_parser('stop', parents=[venv, app, procfile, envfile, logpath, pidpath],
+    sp_stop = sp.add_parser('stop', parents=[venv, app, procfile, envfile, logpath, pidpath, process_name],
                             help='Stops Procfile processes')
-    sp_stop.add_argument('process', nargs='*', type=str, help='Procfile Process Name')
     sp_stop.set_defaults(func=stop)
     # Restart
-    sp_restart = sp.add_parser('restart', parents=[venv, app, procfile, envfile, logpath, pidpath],
+    sp_restart = sp.add_parser('restart', parents=[venv, app, procfile, envfile, logpath, pidpath, process_name],
                                help='Restarts Procfile processes')
-    sp_restart.add_argument('process', nargs='*', type=str, help='Procfile Process Name')
     sp_restart.set_defaults(func=restart)
     # Deploy
     sp_deploy = sp.add_parser('deploy', parents=[venv, app, deployfile, envfile, logpath],
                               help='Run tasks in Deployfile')
-    sp_deploy.add_argument('process', nargs='*', type=str, help='Procfile Process Name')
     sp_deploy.set_defaults(func=deploy)
     # Init
-    sp_init = sp.add_parser('init', parents=[venv, app, deployfile, procfile, envfile, logpath, pidpath, no_pid],
+    sp_init = sp.add_parser('init', parents=[venv, app, deployfile, procfile, envfile, logpath, pidpath, no_pid, process_name],
                                help='Run Deployfile tasks and then start Procfile processes in foreground')
     sp_init.set_defaults(func=init)
 
