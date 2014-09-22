@@ -28,9 +28,9 @@ def test_start(capsys):
     #
     b.start()
     output, err = capsys.readouterr()
-    expected_output = 'Launching sleep0: sleep 0\n' \
-                      'Launching sleep5: sleep 5\n' \
-                      'Launching sleep10: sleep 10\n'
+    expected_output = 'Spawning sleep0: sleep 0\n' \
+                      'Spawning sleep5: sleep 5\n' \
+                      'Spawning sleep10: sleep 10\n'
     assert output == expected_output
 
     # used for stop test
