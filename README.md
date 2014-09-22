@@ -1,11 +1,8 @@
 # Python Bureaucrat
 
-[![Build Status](https://travis-ci.org/adlibre/python-bureaucrat.svg?branch=master)]
-    (https://travis-ci.org/adlibre/python-bureaucrat)
-[![PyPI version](https://badge.fury.io/py/bureaucrat.svg)]
-    (https://pypi.python.org/pypi/bureaucrat/)
-[![Downloads](https://pypip.in/download/bureaucrat/badge.svg)]
-    (https://pypi.python.org/pypi/bureaucrat/)
+[![Build Status](https://travis-ci.org/adlibre/python-bureaucrat.svg?branch=master)](https://travis-ci.org/adlibre/python-bureaucrat)
+[![PyPI version](https://badge.fury.io/py/bureaucrat.svg)](https://pypi.python.org/pypi/bureaucrat/)
+[![Downloads](https://pypip.in/download/bureaucrat/badge.svg)](https://pypi.python.org/pypi/bureaucrat/)
 
 The _Procfile_ & _Deployfile_ process manager for Python Virtual Environments.
 
