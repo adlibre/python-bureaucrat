@@ -1,4 +1,4 @@
-#!/Users/andrew/django/virtualenvs/vgrefactor/bin/python
+#!/usr/bin/env python
 """ Bureaucrat - The Procfile & Deployfile process manager for Python Virtual Environments """
 
 import argparse
