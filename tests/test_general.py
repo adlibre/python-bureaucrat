@@ -14,14 +14,12 @@ def test_start(capsys):
     app_path = '/tmp'
     log_path = '/tmp'
     pid_path = '/tmp'
-    b = Bureaucrat(process_file,
-                   env_file,
+    b = Bureaucrat(env_file,
                    virtual_env,
                    app_path,
                    log_path,
-                   pid_path,
-                   named_procs=None,
-                   debug=True)
+                   pid_path)
+    b.load_procfile(process_file, named_procs=None)
 
     #
     # Start test
