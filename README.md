@@ -1,23 +1,35 @@
 # Python Bureaucrat
 
-[![Build Status](https://travis-ci.org/adlibre/python-bureaucrat.svg?branch=master)](https://travis-ci.org/adlibre/python-bureaucrat)
-[![PyPI version](https://badge.fury.io/py/bureaucrat.svg)](https://pypi.python.org/pypi/bureaucrat/)
-[![Downloads](https://pypip.in/download/bureaucrat/badge.svg)](https://pypi.python.org/pypi/bureaucrat/)
+[![Build Status](https://travis-ci.org/adlibre/python-bureaucrat.svg?branch=master)]
+    (https://travis-ci.org/adlibre/python-bureaucrat)
+[![PyPI version](https://badge.fury.io/py/bureaucrat.svg)]
+    (https://pypi.python.org/pypi/bureaucrat/)
+[![Downloads](https://pypip.in/download/bureaucrat/badge.svg)]
+    (https://pypi.python.org/pypi/bureaucrat/)
 
 The _Procfile_ & _Deployfile_ process manager for Python Virtual Environments.
 
-Bureaucrat provides support for _Deployfile_ based deployment task management. A _Deployfile_ is basically a _Procfile_ by another name. It is used to define the deployment commands for your project.
+Bureaucrat provides support for _Deployfile_ based deployment task management. A _Deployfile_ is basically a _Procfile_
+by another name. It is used to define the deployment commands for your project and spawn the processes required to 
+run it.
+
+If you're using [Docker](http://docker.io) then you might find this useful to automate your container builds.
 
 ## Installation
 
-Install from [PyPI](https://pypi.python.org/pypi/bureaucrat/) with `pip install bureaucrat`
+Install from [PyPI](https://pypi.python.org/pypi/bureaucrat/) with:
 
-Install from source with `pip install git+https://github.com/adlibre/python-bureaucrat.git#egg=bureaucrat`.   
+    pip install bureaucrat
+
+Or install from source with:
+
+    pip install git+https://github.com/adlibre/python-bureaucrat.git#egg=bureaucrat  
 
 ## Config
 
 To use Bureaucrat you will need to create a [Procfile](https://devcenter.heroku.com/articles/procfile), Deployfile
-and [.env](https://devcenter.heroku.com/articles/procfile#setting-local-environment-variables) file in your virtual env root.
+and [.env](https://devcenter.heroku.com/articles/procfile#setting-local-environment-variables) file in your virtual env
+root.
 
 ### Sample _Procfile_
 
@@ -56,6 +68,7 @@ Basic options are _start_, _stop_, _restart_, _deploy_ and _init.
         restart             Restarts Procfile processes
         deploy              Run tasks in Deployfile
         init                Run Deployfile tasks and then start Procfile processes
+                            in foreground
     
     optional arguments:
       -h, --help            show this help message and exit
@@ -67,6 +80,10 @@ Additional arguments for specifying a custom location for `Procfile`, `.env` and
     usage: Bureaucrat start [-h] [--venv VENV] [--app APP] [--procfile PROCFILE]
                             [--envfile ENVFILE] [--logpath LOGPATH]
                             [--pidpath PIDPATH]
+                            [process [process ...]]
+    
+    positional arguments:
+      process              Procfile Process Name
     
     optional arguments:
       -h, --help           show this help message and exit
@@ -80,7 +97,7 @@ Additional arguments for specifying a custom location for `Procfile`, `.env` and
 Example:
 
     $ bureaucrat start
-    Launching web: gunicorn project.wsgi:application --log-file log/gunicorn.$LOGFILE --bind unix:run/gunicorn.sock
+    Spawning web: gunicorn project.wsgi:application --log-file log/gunicorn.$LOGFILE --bind unix:run/gunicorn.sock
 
 ### Deploy Arguments
 
