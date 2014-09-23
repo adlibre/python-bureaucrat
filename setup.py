@@ -3,7 +3,7 @@
 import sys
 from setuptools import setup
 
-VERSION = '0.2.9'
+VERSION = '0.3.0'
 
 install_requires = []
 if sys.version_info < (2, 7):
@@ -43,4 +43,5 @@ setup(name='bureaucrat',
     ],
     scripts=['bureaucrat'],
     install_requires=install_requires,
+    tests_require=['pytest', 'pytest-capturelog'],
 )
