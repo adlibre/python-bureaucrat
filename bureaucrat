@@ -127,7 +127,7 @@ class Process(object):
 class ProcessManager(object):
     """ Manage all processes in a given process file  """
 
-    def __init__(self, process_file, env_file, log_path, pid_path, create_pids, named_procs=None, debug=False):
+    def __init__(self, process_file, path_additions, env_file, log_path, pid_path, create_pids, named_procs=None, debug=False):
         self.debug = debug
         self.create_pids = create_pids
 
@@ -136,6 +136,9 @@ class ProcessManager(object):
         self.processes = self._parse_process_file(process_file, log_path, pid_path)
         if named_procs is not None and len(named_procs) > 0:  # truncate processes
             self.processes = [p for p in self.processes if p.name in named_procs]
+        # Set Path
+        for p in path_additions:
+            os.environ['PATH'] = p + os.pathsep + os.environ['PATH']
 
     def _set_environment(self, env_file):
         """ Set environment variables from .env file """
@@ -183,15 +186,18 @@ class Bureaucrat(object):
         self.env_file = env_file
         self.log_path = log_path
         self.pid_path = pid_path
-        # Set Path
-        # Add virtualenv root and bin to path (alternatively we source bin/activate)
-        os.environ['PATH'] = '%s/bin' % self.virtual_env + os.pathsep + \
-            '%s' % self.app_path + os.pathsep + os.environ['PATH']
         # Listen for shutdown
         signal.signal(signal.SIGTERM, self._sigterm_handler)
 
     def load_procfile(self, process_file, named_procs, create_pids=True):
-        self.process_manager = ProcessManager(process_file, self.env_file, self.log_path, self.pid_path, create_pids, named_procs)
+        path_additions = ['%s/bin' % self.virtual_env, self.app_path]
+        self.process_manager = ProcessManager(process_file,
+                                              path_additions,
+                                              self.env_file,
+                                              self.log_path,
+                                              self.pid_path,
+                                              create_pids,
+                                              named_procs)
 
     def start(self):
         """  Start processes defined in Procfile """
