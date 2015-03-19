@@ -276,6 +276,7 @@ def bureaucrat_init(args, process_file='Procfile', create_pids=True):
             named_procs = set(os.environ.get('PROCFILE_TASKS', '').split()) or None
     elif process_file == 'Deployfile':
         process_file = args.deployfile or os.path.join(app_path, 'Deployfile')
+        named_procs = None
 
     if hasattr(args, 'pid_path'):
             pid_path = args.pidpath or ''
@@ -288,7 +289,7 @@ def bureaucrat_init(args, process_file='Procfile', create_pids=True):
 
     log_path = args.logpath or ''
     b = Bureaucrat(env_file, virtual_env, app_path, log_path, pid_path)
-    b.load_processfile(process_file, create_pids, named_procs=None)
+    b.load_processfile(process_file, create_pids, named_procs)
     return b
 
 
