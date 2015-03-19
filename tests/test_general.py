@@ -19,7 +19,7 @@ def test_start(capsys):
                    app_path,
                    log_path,
                    pid_path)
-    b.load_procfile(process_file, named_procs=None)
+    b.load_processfile(process_file, named_procs=None)
 
     #
     # Start test
