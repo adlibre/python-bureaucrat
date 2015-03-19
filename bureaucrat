@@ -127,7 +127,8 @@ class Process(object):
 class ProcessManager(object):
     """ Manage all processes in a given process file  """
 
-    def __init__(self, process_file, path_additions, env_file, log_path, pid_path, create_pids, named_procs=None, debug=False):
+    def __init__(self, process_file, path_additions, env_file, log_path, pid_path, create_pids, named_procs=None,
+                 debug=False):
         self.debug = debug
         self.create_pids = create_pids
 
@@ -189,7 +190,7 @@ class Bureaucrat(object):
         # Listen for shutdown
         signal.signal(signal.SIGTERM, self._sigterm_handler)
 
-    def load_procfile(self, process_file, create_pids=True, named_procs=None):
+    def load_processfile(self, process_file, create_pids=True, named_procs=None):
         path_additions = ['%s/bin' % self.virtual_env, self.app_path]
         self.process_manager = ProcessManager(process_file,
                                               path_additions,
@@ -260,7 +261,7 @@ class Bureaucrat(object):
             sys.exit(EXIT_OK)
 
 
-def bureaucrat_args_init(args, process_file='Procfile', create_pids=True):
+def bureaucrat_init(args, process_file='Procfile', create_pids=True):
     # init
     virtual_env = args.venv or os.environ.get('VIRTUAL_ENV', os.getcwd())  # read env var from venv or param or cwd
     app_path = args.app or virtual_env
@@ -287,34 +288,34 @@ def bureaucrat_args_init(args, process_file='Procfile', create_pids=True):
 
     log_path = args.logpath or ''
     b = Bureaucrat(env_file, virtual_env, app_path, log_path, pid_path)
-    b.load_procfile(process_file, create_pids, named_procs=None)
+    b.load_processfile(process_file, create_pids, named_procs=None)
     return b
 
 
 def stop(args):
-    b = bureaucrat_args_init(args)
+    b = bureaucrat_init(args)
     return b.stop()
 
 
 def start(args):
-    b = bureaucrat_args_init(args)
+    b = bureaucrat_init(args)
     return b.start()
 
 
 def restart(args):
-    b = bureaucrat_args_init(args)
+    b = bureaucrat_init(args)
     b.stop()
     b.start()
 
 
 def deploy(args):
-    b = bureaucrat_args_init(args, process_file='Deployfile', create_pids=False)
+    b = bureaucrat_init(args, process_file='Deployfile', create_pids=False)
     b.deploy()
 
 
 def init(args):
     deploy(args)
-    b = bureaucrat_args_init(args, create_pids=False)
+    b = bureaucrat_init(args, create_pids=False)
     b.start()
     b.monitor()
 
@@ -369,7 +370,8 @@ if __name__ == "__main__":
                               help='Run tasks in Deployfile')
     sp_deploy.set_defaults(func=deploy)
     # Init
-    sp_init = sp.add_parser('init', parents=[venv, app, deployfile, procfile, envfile, logpath, pidpath, no_pid, process_name],
+    sp_init = sp.add_parser('init', parents=[venv, app, deployfile, procfile, envfile, logpath, pidpath, no_pid,
+                                             process_name],
                                help='Run Deployfile tasks and then start Procfile processes in foreground')
     sp_init.set_defaults(func=init)
 
