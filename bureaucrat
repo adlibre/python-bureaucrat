@@ -189,7 +189,7 @@ class Bureaucrat(object):
         # Listen for shutdown
         signal.signal(signal.SIGTERM, self._sigterm_handler)
 
-    def load_procfile(self, process_file, named_procs, create_pids=True):
+    def load_procfile(self, process_file, create_pids=True, named_procs=None):
         path_additions = ['%s/bin' % self.virtual_env, self.app_path]
         self.process_manager = ProcessManager(process_file,
                                               path_additions,
@@ -268,13 +268,13 @@ def bureaucrat_args_init(args, process_file='Procfile', create_pids=True):
 
     if process_file == 'Procfile':
         process_file = args.procfile or os.path.join(app_path, 'Procfile')
+        # Only truncate ProcFile processes, all DeployFile steps always run
+        if hasattr(args, 'process'):
+            named_procs = set(args.process) or set(os.environ.get('PROCFILE_TASKS', '').split()) or None
+        else:
+            named_procs = set(os.environ.get('PROCFILE_TASKS', '').split()) or None
     elif process_file == 'Deployfile':
         process_file = args.deployfile or os.path.join(app_path, 'Deployfile')
-
-    if hasattr(args, 'process'):
-        named_procs = set(args.process) or set(os.environ.get('PROCFILE_TASKS', '').split()) or None
-    else:
-        named_procs = set(os.environ.get('PROCFILE_TASKS', '').split()) or None
 
     if hasattr(args, 'pid_path'):
             pid_path = args.pidpath or ''
@@ -287,7 +287,7 @@ def bureaucrat_args_init(args, process_file='Procfile', create_pids=True):
 
     log_path = args.logpath or ''
     b = Bureaucrat(env_file, virtual_env, app_path, log_path, pid_path)
-    b.load_procfile(process_file, named_procs, create_pids)
+    b.load_procfile(process_file, create_pids, named_procs=None)
     return b
 
 
