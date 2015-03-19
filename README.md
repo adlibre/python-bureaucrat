@@ -10,6 +10,8 @@ Bureaucrat provides support for _Deployfile_ based deployment task management. A
 by another name. It is used to define the deployment commands for your project and spawn the processes required to 
 run it.
 
+_Deployfile_ commands must be idempotent.
+
 If you're using [Docker](http://docker.io) then you might find this useful to automate your container builds.
 
 ## Installation
@@ -41,7 +43,6 @@ The following is suitable for a Django app deployment.
 
     pip: pip install -r requirements.txt
     syncdb: manage.py syncdb --noinput
-    migrate: manage.py migrate --noinput
     collectstatic: manage.py collectstatic --noinput
     
 ### Sample _.env_
