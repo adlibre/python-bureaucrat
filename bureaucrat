@@ -106,12 +106,19 @@ class Process(object):
             logger.info("%s: %s" % (self.name, self.cmd))
         cmd = self.expanded_cmd()
         try:
+            # On windows if shell is not set to true, virtualenv python is not used.
+            # known bug for subprocess in windows https://bugs.python.org/issue18069
+            shell_win = False
+            if sys.platform == 'win32':
+                shell_win = True
             if background:
                 self.sub_process = subprocess.Popen(cmd, cwd=cwd, stdout=open(self.log_file, 'w'),
-                                                    stderr=open(self.log_file, 'w'))
+                                                    stderr=open(self.log_file, 'w'),
+                                                    shell=shell_win)
             else:
                 self.sub_process = subprocess.Popen(cmd, cwd=cwd, stdout=open(self.log_file, 'w'),
-                                                    stderr=subprocess.STDOUT)
+                                                    stderr=subprocess.STDOUT,
+                                                    shell=shell_win)
                 self.sub_process.wait()
         except OSError:
             logger.error("Command %s not found" % cmd[:1])
@@ -191,7 +198,10 @@ class Bureaucrat(object):
         signal.signal(signal.SIGTERM, self._sigterm_handler)
 
     def load_processfile(self, process_file, create_pids=True, named_procs=None):
-        path_additions = ['%s/bin' % self.virtual_env, self.app_path]
+        virtual_env_bin_path = '%s/bin' % self.virtual_env
+        if sys.platform == 'win32':
+            virtual_env_bin_path = '%s/Scripts' % self.virtual_env
+        path_additions = [virtual_env_bin_path, self.app_path]
         self.process_manager = ProcessManager(process_file,
                                               path_additions,
                                               self.env_file,
