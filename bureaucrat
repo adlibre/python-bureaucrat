@@ -108,17 +108,21 @@ class Process(object):
         try:
             # On windows if shell is not set to true, virtualenv python is not used.
             # known bug for subprocess in windows https://bugs.python.org/issue18069
-            shell_win = False
+            # Also if the subprocess forks and returns, then we won't be able to track
+            # the pid for successful start/stop actions. In this case you'll need to use a
+            # wrapper script that invokes a shell that waits for the process to exit.
             if sys.platform == 'win32':
-                shell_win = True
+                shell = True
+            else:
+                shell = False
             if background:
                 self.sub_process = subprocess.Popen(cmd, cwd=cwd, stdout=open(self.log_file, 'w'),
                                                     stderr=open(self.log_file, 'w'),
-                                                    shell=shell_win)
+                                                    shell=shell)
             else:
                 self.sub_process = subprocess.Popen(cmd, cwd=cwd, stdout=open(self.log_file, 'w'),
                                                     stderr=subprocess.STDOUT,
-                                                    shell=shell_win)
+                                                    shell=shell)
                 self.sub_process.wait()
         except OSError:
             logger.error("Command %s not found" % cmd[:1])
