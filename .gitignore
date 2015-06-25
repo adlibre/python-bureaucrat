@@ -1,4 +1,5 @@
 *.pyc
+.eggs/
 build/
 bureaucrat.egg-info/
 dist/
