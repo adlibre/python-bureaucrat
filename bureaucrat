@@ -105,27 +105,36 @@ class Process(object):
         else:
             logger.info("%s: %s" % (self.name, self.cmd))
         cmd = self.expanded_cmd()
+
+        # On windows if shell is not set to true, virtualenv python is not used.
+        # known bug for subprocess in windows https://bugs.python.org/issue18069
+        # Also if the subprocess forks and returns, then we won't be able to track
+        # the pid for successful start/stop actions. In this case you'll need to use a
+        # wrapper script that invokes a shell that waits for the process to exit.
+        if sys.platform == 'win32':
+            shell = True
+        else:
+            shell = False
+
+        if not background:
+            log_to = subprocess.PIPE
+        elif self.log_file is None:
+            log_to = None  # This will go to stdout and still allow backgrounding
+        else:
+            log_to = open(self.log_file, 'w')
+
         try:
-            # On windows if shell is not set to true, virtualenv python is not used.
-            # known bug for subprocess in windows https://bugs.python.org/issue18069
-            # Also if the subprocess forks and returns, then we won't be able to track
-            # the pid for successful start/stop actions. In this case you'll need to use a
-            # wrapper script that invokes a shell that waits for the process to exit.
-            if sys.platform == 'win32':
-                shell = True
-            else:
-                shell = False
-            if background:
-                self.sub_process = subprocess.Popen(cmd, cwd=cwd, stdout=open(self.log_file, 'w'),
-                                                    stderr=open(self.log_file, 'w'),
-                                                    shell=shell)
-            else:
-                self.sub_process = subprocess.Popen(cmd, cwd=cwd, stdout=open(self.log_file, 'w'),
-                                                    stderr=subprocess.STDOUT,
-                                                    shell=shell)
-                self.sub_process.wait()
-        except OSError:
-            logger.error("Command %s not found" % cmd[:1])
+            self.sub_process = subprocess.Popen(cmd, cwd=cwd, stdout=log_to, stderr=subprocess.STDOUT, shell=shell)
+            if not background:
+                # blocks until the next line-feed
+                while True:
+                    line = self.sub_process.stdout.readline()
+                    if not line:
+                        break
+                    logger.info(line.rstrip())
+
+        except OSError as e:
+            logger.error("%s. Command %s not found?" % (e, cmd[:1]))
             return False
         else:
             if self.pid_file:
@@ -142,6 +151,7 @@ class ProcessManager(object):
                  debug=False):
         self.debug = debug
         self.create_pids = create_pids
+        self.log_file = None
 
         # Init
         self._set_environment(env_file)
@@ -183,7 +193,8 @@ class ProcessManager(object):
                     p.pid_file = os.path.join(pid_path, '%s.pid' % name)  # Assign pid file
                 else:
                     p.pid_file = None
-                p.log_file = os.path.join(log_path, '%s.log' % name)  # assign log file
+                if log_path != '-':  # not stdout
+                    p.log_file = os.path.join(log_path, '%s.log' % name)  # assign log file
                 processes.append(p)
         return processes
 
