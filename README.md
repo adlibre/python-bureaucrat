@@ -53,7 +53,7 @@ The following is suitable for a Django app deployment.
 
 ## Usage
 
-Basic options are _start_, _stop_, _restart_, _deploy_ and _init.
+Basic options are _start_, _stop_, _restart_, _deploy_ and _init_.
 
     usage: Bureaucrat [-h] {start,stop,restart,deploy,init} ...
     
