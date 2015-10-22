@@ -3,7 +3,7 @@
 import sys
 from setuptools import setup
 
-VERSION = '0.3.5'
+VERSION = '0.3.6'
 
 install_requires = []
 if sys.version_info < (2, 7):
@@ -21,7 +21,7 @@ setup(name='bureaucrat',
     version=VERSION,
     author="Andrew Cutler",
     author_email="andrew@adlibre.com.au",
-    description="Procfile and Deployfile process manager for virtual environments",
+    description="Procfile and Deployfile process manager for Python virtual environments",
     license="BSD",
     long_description=read_md('README.md'),
     url='https://github.com/adlibre/python-bureaucrat',
