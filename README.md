@@ -31,16 +31,16 @@ root.
 
 ### Sample _Procfile_
 
-The following is shows a single gunicorn web process.
+The following will spawn a single gunicorn web process.
 
     web: gunicorn project.wsgi:application --workers $WORKERS --log-file $LOGFILE --bind 0.0.0.0:$PORT --timeout 300
 
 ### Sample _Deployfile_
 
-The following is suitable for a Django app deployment.
+The following is suitable for deploying a Django application.
 
     pip: pip install -r requirements.txt
-    syncdb: manage.py syncdb --noinput
+    migrate: manage.py migrate --noinput
     collectstatic: manage.py collectstatic --noinput
     
 ### Sample _.env_
