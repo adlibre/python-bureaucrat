@@ -303,8 +303,8 @@ def bureaucrat_init(args, process_file='Procfile', create_pids=True):
         process_file = args.deployfile or os.path.join(app_path, 'Deployfile')
         named_procs = None
 
-    if hasattr(args, 'pid_path'):
-            pid_path = args.pidpath or ''
+    if hasattr(args, 'pidpath'):
+        pid_path = args.pidpath or ''
     else:
         pid_path = ''
 
